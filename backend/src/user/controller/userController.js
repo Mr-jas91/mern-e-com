@@ -1,7 +1,7 @@
 import { User } from "../models/user.models.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHander.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { asyncHandler } from "../../utils/asyncHander.js";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -48,9 +48,13 @@ const createUser = asyncHandler(async (req, res) => {
     if (!createdUser) {
       return res.status(500).json(new ApiError(500, "Regitration failed"));
     }
-
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      user._id
+    );
+    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
     return res
       .status(201)
+      .cookie("refreshToken", refreshToken, options)
       .json(new ApiResponse(201, "Registered successfully"));
   } catch (error) {
     return res.status(500).json(new ApiError(500, "", error));
@@ -75,8 +79,6 @@ const loginUser = asyncHandler(async (req, res) => {
       existUser._id
     );
     const options = { httpOnly: true, secure: false, sameSite: "Strict" };
-
-    // .cookie("accessToken", accessToken, options)
     res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
@@ -108,7 +110,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
-const AuthUser = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -134,4 +136,4 @@ const AuthUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { createUser, loginUser, logoutUser, AuthUser };
+export { createUser, loginUser, logoutUser, getCurrentUser };

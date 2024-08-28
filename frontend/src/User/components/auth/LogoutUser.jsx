@@ -18,11 +18,10 @@ function LogoutUser() {
           withCredentials: true,
         }
       );
-      localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
       history.push("/home");
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 

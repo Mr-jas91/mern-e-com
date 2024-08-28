@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from "react";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 
 const SideNavbar = () => {
-  const { isOpen } = useAuth();
-
+  const { isOpen, isAuthenticated, setIsAuthenticated, setIsOpen } = useAuth();
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(
+        "http://localhost:5000/api/admin/logout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      setIsAuthenticated(false);
+      setIsOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <aside
       className={`bg-gray-800 text-white h-[calc(100vh-4rem)] md:w-64 flex flex-col  transition-all duration-300 fixed`}
@@ -68,7 +84,11 @@ const SideNavbar = () => {
           <Link to="/orders">Orders</Link>
         </li>
         <li className="hover:bg-black text-white font-xl text-center p-2 flex items-center justify-center">
-          <Link to="/orders">Logout</Link>
+          {isAuthenticated ? (
+            <button type="button" onClick={handleLogout}>Logout</button>
+          ) : (
+            <Link to="/signup">Signup</Link>
+          )}
         </li>
       </ul>
     </aside>

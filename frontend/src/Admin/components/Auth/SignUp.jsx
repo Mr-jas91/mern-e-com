@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useHistory, Link } from "react-router-dom";
+import axios from "axios";
 function Signup() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -12,16 +13,20 @@ function Signup() {
   const registeruser = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/users", {
-        firstName,
-        lastName,
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/admin/register",
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+        }
+      );
+      const { refreshToken } = response.data;
+      localStorage.setItem("refreshToken", refreshToken);
       setIsAuthenticated(true);
-      history.push("/");
+      history.push("/dashboard");
     } catch (error) {
-      console.log(error);
       setMessage(error.response.data.data);
     }
   };

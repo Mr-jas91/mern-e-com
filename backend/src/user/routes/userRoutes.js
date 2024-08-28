@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  AuthUser,
+  getCurrentUser,
   createUser,
   loginUser,
   logoutUser,
@@ -12,6 +12,6 @@ const router = express.Router();
 router.route("/users").post(createUser);
 router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/auth").post(verifyJWT, AuthUser);
+router.route("/auth").post(verifyJWT, getCurrentUser);
 
 export default router;

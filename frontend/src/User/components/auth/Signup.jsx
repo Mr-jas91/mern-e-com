@@ -20,6 +20,8 @@ function Signup() {
         email,
         password,
       });
+      const { refreshToken } = response.data;
+      localStorage.setItem("refreshToken", refreshToken);
       setIsAuthenticated(true);
       history.push("/");
     } catch (error) {

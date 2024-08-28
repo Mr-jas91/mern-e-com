@@ -6,7 +6,7 @@ import {
   Redirect,
 } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
-import PrivateRoute from "../services/AuthUser"
+import PrivateRoute from "../services/AuthUser";
 const Signin = lazy(() => import("./auth/Signin"));
 const Signup = lazy(() => import("./auth/Signup"));
 const LogoutUser = lazy(() => import("./auth/LogoutUser"));
@@ -34,7 +34,7 @@ function MainApp() {
         >
           <Header />
           <Switch>
-            <Route path="/home" component={Home} />
+            <PrivateRoute path="/home" component={Home} />
             <PrivateRoute path="/login" component={Signin} />
             <PrivateRoute path="/signup" component={Signup} />
             <PrivateRoute path="/cart" component={Cart} />

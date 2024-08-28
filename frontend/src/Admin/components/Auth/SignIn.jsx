@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useHistory, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
-function Login() {
+function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -12,7 +12,7 @@ function Login() {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/login",
+        "http://localhost:5000/api/admin/login",
         {
           email,
           password,
@@ -21,11 +21,11 @@ function Login() {
       );
       const { refreshToken } = response.data;
       localStorage.setItem("refreshToken", refreshToken);
-
       setIsAuthenticated(true);
-      history.push("/");
+      history.push("/dashboard");
     } catch (error) {
-      setMessage(error);
+      history.push("/login");
+      setMessage(error.response.data.message);
     }
   };
 
@@ -100,4 +100,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signin;

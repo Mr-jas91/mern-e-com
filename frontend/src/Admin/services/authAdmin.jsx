@@ -1,22 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Route, Redirect } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../context/AuthContext";
-
+import { useAuth } from "../contexts/AuthContext";
+import { getCurrentUser } from "./authServices";
 const PrivateRoute = ({ component: Component, ...rest }) => {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
 
+  
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await axios.post(
-          "http://localhost:5000/api/auth",
-          {},
-          {
-            withCredentials: true,
-          }
-        );
+        await getCurrentUser();
         setIsAuthenticated(true);
       } catch (error) {
         setIsAuthenticated(false);
@@ -45,18 +39,18 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
         );
         if (isAuthenticated) {
           if (isAuthRoute) {
-            return <Redirect to="/home" />;
+            return <Redirect to="/dashboard" />;
           } else {
-            if (props.location.pathname === "/home") {
+            if (props.location.pathname === "/dashboard") {
               return <Component {...props} />;
             }
             return <Component {...props} />;
           }
         } else {
-          if (isAuthRoute || props.location.pathname === "/home") {
+          if (isAuthRoute || props.location.pathname === "/dashboard") {
             return <Component {...props} />;
           }
-          return <Redirect to="/home" />;
+          return <Redirect to="/dashboard" />;
         }
       }}
     />

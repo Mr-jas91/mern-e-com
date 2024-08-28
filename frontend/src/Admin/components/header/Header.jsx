@@ -2,12 +2,11 @@ import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
 function Header() {
-  const { isOpen,setIsOpen } = useAuth();
+  const { isOpen, setIsOpen } = useAuth();
 
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
   };
-
   return (
     <nav className="bg-gray-300 w-full h-16 pl-1 md:pl-12 pr-12 m-0 justify-between flex flex-row items-center fixed z-10">
       <div className="flex items-center">
@@ -42,10 +41,7 @@ function Header() {
           Search
         </button>
       </div>
-      <div className="flex flex-row items-center">
-        <p className="text-3xl mr-2">User</p>
-        <Link to='/signup' className="text-3xl bg-orange-600 py-2 px-1 rounded-lg">sign Up</Link>
-      </div>
+      <div></div>
     </nav>
   );
 }

@@ -6,6 +6,7 @@ import {
   Redirect,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import PrivateRoute from "./services/authAdmin.jsx";
 
 const SignIn = lazy(() => import("./components/Auth/SignIn"));
 const SignUp = lazy(() => import("./components/Auth/SignUp"));
@@ -20,22 +21,16 @@ function Admin() {
     <div>
       <AuthProvider>
         <Router>
-          <Suspense
-            fallback={
-              <div className="w-full h-screen text-black text-2xl flex justify-center items-center">
-                Loading...
-              </div>
-            }
-          >
+          <Suspense>
             <Header />
             <div className="flex flex-1 pt-16">
               <SideMenu />
               <Switch>
-                <Route path="/login" component={SignIn} />
-                <Route path="/signup" component={SignUp} />
-                <Route path="/dashboard" component={Dashboard} />
-                <Route path="/products" component={Products} />
-                <Route path="/orders" component={Orders} />
+                <PrivateRoute path="/login" component={SignIn} />
+                <PrivateRoute path="/signup" component={SignUp} />
+                <PrivateRoute path="/dashboard" component={Dashboard} />
+                <PrivateRoute path="/products" component={Products} />
+                <PrivateRoute path="/orders" component={Orders} />
                 <Redirect from="/" to="/dashboard" />
               </Switch>
             </div>
@@ -47,9 +42,3 @@ function Admin() {
 }
 
 export default Admin;
-
-{
-  /*<PrivateRoute path="/dashboard" component={Dashboard} />
-            <PrivateRoute path="/products" component={Products} />
-            <PrivateRoute path="/orders" component={Orders} /> */
-}
