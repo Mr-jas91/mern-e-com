@@ -10,10 +10,15 @@ const productSchema = mongoose.Schema(
       required: true,
     },
     productImage: {
-      type: String,
-      required: true
+      type: Array,
+      required: true,
     },
     price: {
+      type: Number,
+      default: 0,
+      required: true
+    },
+    discount: {
       type: Number,
       default: 0,
     },
@@ -29,8 +34,9 @@ const productSchema = mongoose.Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
+      required: true,
     },
   },
   { timestamps: true }
 );
-export const Product = mongoose.model("Product", productSchema,"Products");
+export const Product = mongoose.model("Product", productSchema, "Products");
