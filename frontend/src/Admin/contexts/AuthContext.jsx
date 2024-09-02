@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   return (
     <AuthContext.Provider
@@ -12,6 +13,10 @@ export const AuthProvider = ({ children }) => {
         setIsOpen,
         isAuthenticated,
         setIsAuthenticated,
+        message,
+        setMessage,
+        loading,
+        setLoading,
       }}
     >
       {children}
@@ -19,6 +24,8 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
+const useAuth = () => {
   return useContext(AuthContext);
 };
+
+export { AuthProvider, useAuth };

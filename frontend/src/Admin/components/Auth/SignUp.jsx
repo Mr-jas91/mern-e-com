@@ -1,34 +1,23 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useHistory, Link } from "react-router-dom";
-import axios from "axios";
+import { Link } from "react-router-dom";
+import { signUp } from "../../services/authServices";
+import { useHistory } from "react-router-dom";
 function Signup() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const { setIsAuthenticated } = useAuth();
+  const { message, setIsAuthenticated, setMessage } = useAuth();
   const history = useHistory();
   const registeruser = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/register",
-        {
-          firstName,
-          lastName,
-          email,
-          password,
-        }
-      );
-      const { refreshToken } = response.data;
-      localStorage.setItem("refreshToken", refreshToken);
-      setIsAuthenticated(true);
-      history.push("/dashboard");
-    } catch (error) {
-      setMessage(error.response.data.data);
-    }
+    await signUp(
+      { firstName, lastName, email, password },
+      setIsAuthenticated,
+      setMessage,
+      history
+    );
   };
 
   return (

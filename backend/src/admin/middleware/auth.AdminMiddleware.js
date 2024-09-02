@@ -6,12 +6,12 @@ import { Admin } from "../models/admin.models.js";
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const token =
-      req.cookies?.refreshToken ||
+      req.cookies?.refreshToken || // Check for the refreshToken cookie
       (req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
         : null);
-
+console.log(token);
     if (!token) {
       return res.status(401).json(new ApiError(401, "Unauthorized request"));
     }

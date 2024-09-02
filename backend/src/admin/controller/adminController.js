@@ -7,10 +7,11 @@ const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await Admin.findById(userId);
     const refreshToken = user.generateRefreshToken();
+    const accessToken = user.generateAccessToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    return { refreshToken };
+    return { refreshToken, accessToken };
   } catch (error) {
     res.status(400).json(new ApiError(400, "refreshToken not generate", error));
   }
@@ -48,11 +49,12 @@ const createUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       admin._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
+    const options = { httpOnly: true, secure: false, sameSite: "None" };
 
     return res
       .status(201)
       .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, options)
       .json(new ApiResponse(201, `${createdUser} Registered successfully`));
   } catch (error) {
     return res.status(500).json(new ApiError(500, "", error));
@@ -72,16 +74,17 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!validUser) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-    const { refreshToken } = await generateAccessAndRefereshTokens(
+    const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
       existUser._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
+    const options = { httpOnly: true, secure: false, sameSite: "None" };
     res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
-      .json({ refreshToken, message: "verified user" });
+      .cookie("accessToken", accessToken, options)
+      .json(new ApiResponse(200, "Login suceessFully"));
   } catch (error) {
-    return res.status(400).json({ message: "Please try again!" });
+    return res.status(400).json(new ApiError(400, "Please try again!"));
   }
 });
 const logoutUser = asyncHandler(async (req, res) => {
@@ -97,14 +100,16 @@ const logoutUser = asyncHandler(async (req, res) => {
         new: true,
       }
     );
-    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
+    const options = { httpOnly: true, secure: false, sameSite: "None" };
     res
       .status(200)
       .clearCookie("accessToken", options)
       .clearCookie("refreshToken", options)
-      .json({ message: "User logged out" });
+      .json(new ApiResponse(200, "Logged out successfully!"));
   } catch (error) {
-    res.status(500).json({ error: error.message || "Internal server error" });
+    res
+      .status(500)
+      .json(new ApiError(500, `${error.message} || Internal server error`));
   }
 });
 const getCurrentUser = asyncHandler(async (req, res) => {
@@ -115,17 +120,18 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "User doesn't exist." });
     }
 
-    const { refreshToken } = await generateAccessAndRefereshTokens(
+    const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
       req.admin._id
     );
     const options = {
       httpOnly: true,
       secure: false,
-      sameSite: "Strict",
+      sameSite: "None",
     };
     return res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, options)
       .json(new ApiResponse(200, "Authorized"));
   } catch (error) {
     console.log("error", error);

@@ -9,14 +9,14 @@ const productSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    productImage: {
+    images: {
       type: Array,
       required: true,
     },
     price: {
       type: Number,
       default: 0,
-      required: true
+      required: true,
     },
     discount: {
       type: Number,
@@ -27,7 +27,7 @@ const productSchema = mongoose.Schema(
       default: 0,
     },
     category: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Category",
       required: true,
     },
