@@ -1,7 +1,7 @@
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
 import jwt from "jsonwebtoken";
-import { Admin } from "../models/admin.models.js";
+import { Admin } from "../../models/admin.models.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
@@ -11,7 +11,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       req.headers.authorization.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
         : null);
-console.log(token);
     if (!token) {
       return res.status(401).json(new ApiError(401, "Unauthorized request"));
     }
