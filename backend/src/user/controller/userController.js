@@ -1,4 +1,4 @@
-import { User } from "../models/user.models.js";
+import { User } from "../../models/user.models.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
@@ -129,11 +129,26 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
-      .json(new ApiResponse(200, "Authorized"));
+      .json(new ApiResponse(200, refreshToken));
   } catch (error) {
     console.log("error", error);
     return res.status(400).json(new ApiError(400, "Please login", error));
   }
 });
-
-export { createUser, loginUser, logoutUser, getCurrentUser };
+const getUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(400).json({ message: "User doesn't exist." });
+    }
+    res.json(new ApiResponse(200, "User profile", user));
+    // res.json(user);
+    // res.json(new ApiResponse(200, "User profile", {
+    //   firstName: user.firstName,
+    //   lastName: user.lastName,
+    // }));
+  } catch (error) {
+    return res.status(400).json(new ApiError(400, "Please login", error));
+  }
+});
+export { createUser, loginUser, logoutUser, getCurrentUser,getUserProfile };
