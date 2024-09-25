@@ -1,8 +1,8 @@
-import { ApiError } from "../../utils/ApiError";
-import { ApiResponse } from "../../utils/ApiResponse";
-import { asyncHandler } from "../../utils/asyncHander";
-import { Wishlist } from "../../models/wishlist.models";
-import { Product } from "../../models/product.models";
+import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { asyncHandler } from "../../utils/asyncHander.js";
+import { Wishlist } from "../../models/wishlist.models.js";
+import { Product } from "../../models/product.models.js";
 const addProductToWishlist = asyncHandler(async (req, res) => {
   const { productId } = req.body;
   const userId = req.user_id;

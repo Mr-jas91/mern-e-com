@@ -1,8 +1,8 @@
-import { Product } from "../../models/product.models";
-import { ApiResponse } from "../../utils/ApiResponse";
-import { ApiError } from "../../utils/ApiError";
-import { asyncHandler } from "../../utils/asyncHander";
-import { Category } from "../../models/category.models";
+import { Product } from "../../models/product.models.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { asyncHandler } from "../../utils/asyncHander.js";
+import { Category } from "../../models/category.models.js";
 const getProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find().limit(10);

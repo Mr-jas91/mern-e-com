@@ -31,11 +31,23 @@ const orderSchema = new mongoose.Schema(
       required: true, // At least one item must be in the order
       validate: [arrayLimit, "{PATH} must have at least 1 order item"], // Custom validation to ensure non-empty
     },
-    address: {
-      type: String,
+    ShippingAddress: {
+      type: Object,
       required: true, // Shipping address is mandatory
     },
-    status: {
+    paymentMethod: {
+      type: String,
+      required: true, // Payment method is mandatory
+      enum: ["ONLINE_UPI", "DEBIT_CARD", "COD"], // Payment method can be ONLINE_UPI, DEBIT_CARD, or PAYPAL
+      default: "ONLINE_UPI", // Default payment method is ONLINE_UPI
+    },
+    paymentStatus: {
+      type: String,
+      required: true, // Payment status is mandatory
+      enum: ["UNPAID", "PAID", "REFUNDED"], // Payment status can be UNPAID, PAID, or REFUNDED
+      default: "UNPAID", // Default payment status is UNPAID
+    },
+    deliveryStatus: {
       type: String,
       enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
       default: "PENDING", // Default status is PENDING

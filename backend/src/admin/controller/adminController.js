@@ -1,4 +1,4 @@
-import { Admin } from "../models/admin.models.js";
+import { Admin } from "../../models/admin.models.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
@@ -49,13 +49,19 @@ const createUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       admin._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "None" };
+    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
 
     return res
       .status(201)
       .cookie("refreshToken", refreshToken, options)
       .cookie("accessToken", accessToken, options)
-      .json(new ApiResponse(201, `${createdUser} Registered successfully`));
+      .json(
+        new new ApiResponse(200, {
+          message: "user registered successfully",
+          refreshToken: refreshToken,
+          accessToken: accessToken,
+        })()
+      );
   } catch (error) {
     return res.status(500).json(new ApiError(500, "", error));
   }
@@ -70,6 +76,7 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!existUser) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
     const validUser = await existUser.isPasswordCorrect(password);
     if (!validUser) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -77,14 +84,36 @@ const loginUser = asyncHandler(async (req, res) => {
     const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
       existUser._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "None" };
+
+    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
     res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
       .cookie("accessToken", accessToken, options)
-      .json(new ApiResponse(200, "Login suceessFully"));
+      .json(
+        new ApiResponse(200, {
+          message: "user verify",
+          refreshToken: refreshToken,
+          accessToken: accessToken,
+        })
+      );
   } catch (error) {
     return res.status(400).json(new ApiError(400, "Please try again!"));
+  }
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  try {
+    const user = await Admin.findById(req.admin._id);
+
+    if (!user) {
+      return res.status(400).json({ message: "User doesn't exist." });
+    }
+
+    return res.status(200).json(new ApiResponse(200, "Authorized"));
+  } catch (error) {
+    console.log("error", error);
+    return res.status(400).json(new ApiError(400, "Please login", error));
   }
 });
 const logoutUser = asyncHandler(async (req, res) => {
@@ -100,7 +129,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         new: true,
       }
     );
-    const options = { httpOnly: true, secure: false, sameSite: "None" };
+    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
     res
       .status(200)
       .clearCookie("accessToken", options)
@@ -112,31 +141,18 @@ const logoutUser = asyncHandler(async (req, res) => {
       .json(new ApiError(500, `${error.message} || Internal server error`));
   }
 });
-const getCurrentUser = asyncHandler(async (req, res) => {
+const getAdminProfile = asyncHandler(async (req, res) => {
   try {
-    const user = await Admin.findById(req.admin._id);
-
+    const user = await Admin.findById(req.admin._id).select(
+      "-_id -password -refreshToken -createdAt -updatedAt"
+    );
     if (!user) {
       return res.status(400).json({ message: "User doesn't exist." });
     }
-
-    const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
-      req.admin._id
-    );
-    const options = {
-      httpOnly: true,
-      secure: false,
-      sameSite: "None",
-    };
-    return res
-      .status(200)
-      .cookie("refreshToken", refreshToken, options)
-      .cookie("accessToken", accessToken, options)
-      .json(new ApiResponse(200, "Authorized"));
+    return res.status(200).json(new ApiResponse(200, user));
   } catch (error) {
     console.log("error", error);
     return res.status(400).json(new ApiError(400, "Please login", error));
   }
 });
-
-export { createUser, loginUser, logoutUser, getCurrentUser };
+export { createUser, loginUser, logoutUser, getCurrentUser, getAdminProfile };

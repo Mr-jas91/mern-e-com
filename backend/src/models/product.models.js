@@ -31,6 +31,14 @@ const productSchema = mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    ratings: {
+      type: Array,
+      default: [],
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",

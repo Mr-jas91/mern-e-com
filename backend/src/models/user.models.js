@@ -23,6 +23,27 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Password required"], // Corrected the typo
     },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    cart: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
+      },
+    ],
     orderHistory: [
       {
         type: Schema.Types.ObjectId,
