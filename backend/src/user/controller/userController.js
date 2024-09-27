@@ -136,19 +136,10 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   }
 });
 const getUserProfile = asyncHandler(async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(400).json({ message: "User doesn't exist." });
-    }
-    res.json(new ApiResponse(200, "User profile", user));
-    // res.json(user);
-    // res.json(new ApiResponse(200, "User profile", {
-    //   firstName: user.firstName,
-    //   lastName: user.lastName,
-    // }));
-  } catch (error) {
-    return res.status(400).json(new ApiError(400, "Please login", error));
+  const user = await User.findById(req.user._id).select("firstName email lastName");
+  if (!user) {
+    return res.status(400).json({ message: "User doesn't exist." });
   }
+  res.json(new ApiResponse(200, user));
 });
-export { createUser, loginUser, logoutUser, getCurrentUser,getUserProfile };
+export { createUser, loginUser, logoutUser, getCurrentUser, getUserProfile };

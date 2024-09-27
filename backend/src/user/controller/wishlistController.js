@@ -2,64 +2,81 @@ import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
 import { Wishlist } from "../../models/wishlist.models.js";
-import { Product } from "../../models/product.models.js";
-const addProductToWishlist = asyncHandler(async (req, res) => {
-  const { productId } = req.body;
-  const userId = req.user_id;
-  const product = await Product.findById(productId);
-  if (!product) {
-    return res.status(400).json(new ApiError(400, "Invalid Product ID"));
-  }
 
-  try {
-    const existingWishlist = await Wishlist.findOne({ userId });
-    if (existingWishlist) {
-      existingWishlist.products.push(product._id);
-      await existingWishlist.save();
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Product added to Wishlist"));
-    } else {
-      const newWishlist = new Wishlist({ userId, products: [productId] });
-      await newWishlist.save();
-      return res.status(201).json(new ApiResponse(201, "New Wishlist created"));
-    }
-  } catch (error) {
-    return ApiResponse.error(res, error);
-  }
-});
-const getWishlist = asyncHandler(async (req, res) => {
-  try {
-    const wishlist = await Wishlist.findById(req.params.id);
-    if (!wishlist) {
-      return res.status(404).json(new ApiError(404, "Wishlist Empty"));
-    }
-    return res.status(200).json(new ApiResponse(200, wishlist));
-  } catch (error) {
-    return ApiResponse.error(res, error);
-  }
-});
-const deleteProductFromWishlist = asyncHandler(async (req, res) => {
+// Add to Wishlist
+const addToWishlist = asyncHandler(async (req, res) => {
   const { productId } = req.body;
   const userId = req.user._id;
-  if (!productId) {
-    return res.status(400).json(new ApiError(400, "Invalid Product ID"));
+
+  // Find the user's wishlist or create a new one
+  let wishlist = await Wishlist.findOne({ userId });
+  //if wishlist not found then craete
+  if (!wishlist) {
+    wishlist = new Wishlist({ userId, items: [] });
   }
-  try {
-    const wishlist = await Wishlist.findOneAndUpdate(
-      { userId },
-      { $pull: { products: productId } },
-      { new: true }
-    );
-    if (!wishlist) {
-      return res.status(404).json(new ApiError(404, "Wishlist Empty"));
-    }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, "Product deleted from Wishlist"));
-  } catch (error) {
-    return ApiResponse.error(res, error);
+
+  // Check if the product is already in the wishlist
+  const productExists = wishlist.items.some(
+    (item) => item.productId.toString() === productId
+  );
+
+  if (productExists) {
+   // res.status(400);
+    throw new ApiError("Product already in wishlist");
   }
+
+  // Add product to the wishlist
+  wishlist.items.push({ productId });
+  await wishlist.save();
+  res.status(200).json(new ApiResponse(200, wishlist));
 });
 
-export { addProductToWishlist, getWishlist, deleteProductFromWishlist };
+// Remove from Wishlist
+const removeFromWishlist = asyncHandler(async (req, res) => {
+  const { productId } = req.body;
+  const userId = req.user._id;
+
+  // Find the user's wishlist
+  let wishlist = await Wishlist.findOne({ userId });
+
+  if (!wishlist) {
+    res.status(404);
+    throw new Error("Wishlist not found");
+  }
+
+  // Check if the product exists in the wishlist
+  const itemIndex = wishlist.items.findIndex(
+    (item) => item.productId.toString() === productId
+  );
+
+  if (itemIndex === -1) {
+    res.status(404);
+    throw new Error("Product not found in wishlist");
+  }
+
+  // Remove product from wishlist
+  wishlist.items.splice(itemIndex, 1);
+  await wishlist.save();
+
+  res.status(200).json(new ApiResponse(200, wishlist));
+});
+
+// Get Wishlist
+const getWishlist = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // Find the user's wishlist
+  const wishlist = await Wishlist.findOne({ userId }).populate(
+    "items.productId",
+    "name price images"
+  );
+
+  //if wishlist not found then craete
+  if (!wishlist) {
+    wishlist = new Wishlist({ userId, items: [] });
+  }
+
+  res.status(200).json(new ApiResponse(200, wishlist));
+});
+
+export { addToWishlist, removeFromWishlist, getWishlist };
