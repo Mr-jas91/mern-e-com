@@ -11,6 +11,11 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
     min: 1, // Ensures at least 1 item is ordered
   },
+  deliveryStatus: {
+    type: String,
+    enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
+    default: "PENDING", // Default status is PENDING
+  },
 });
 
 // Schema for the whole order
@@ -31,7 +36,7 @@ const orderSchema = new mongoose.Schema(
       required: true, // At least one item must be in the order
       validate: [arrayLimit, "{PATH} must have at least 1 order item"], // Custom validation to ensure non-empty
     },
-    ShippingAddress: {
+    shippingAddress: {
       type: Object,
       required: true, // Shipping address is mandatory
     },
@@ -47,11 +52,7 @@ const orderSchema = new mongoose.Schema(
       enum: ["UNPAID", "PAID", "REFUNDED"], // Payment status can be UNPAID, PAID, or REFUNDED
       default: "UNPAID", // Default payment status is UNPAID
     },
-    deliveryStatus: {
-      type: String,
-      enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
-      default: "PENDING", // Default status is PENDING
-    },
+    
   },
   { timestamps: true } // Adds createdAt and updatedAt timestamps automatically
 );
