@@ -30,10 +30,12 @@ const app = express();
 
 // app.use(cors(corsOptionsDelegate));
 
-app.use(cors({
-  origin: ['http://admin.localhost:3000', 'http://localhost:3000'],
-  credentials: true,  // Allow cookies to be sent
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true, // Allow cookies to be sent
+  })
+);
 app.use(cookieParser());
 app.use(
   express.json({
