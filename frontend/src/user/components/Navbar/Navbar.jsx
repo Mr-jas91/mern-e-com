@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { logoutUser } from "../../../redux/reducers/authReducer.js";
+import { getCart, clearCart } from "../../../redux/reducers/cartReducer.js";
 const Navbar = () => {
   const navigate = useNavigate();
-  const user = false;
+  const dispatch = useDispatch();
+  const { user, accessToken, error } = useSelector((state) => state.auth);
+  const { cartItems, totalPrice } = useSelector((state) => state.cart);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-
   const handleAvatarClick = () => {
     setIsDropdownOpen((prev) => !prev);
     setIsCartOpen(false);
@@ -22,11 +26,28 @@ const Navbar = () => {
     setIsDropdownOpen(false);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await dispatch(logoutUser(accessToken));
+      await dispatch(clearCart());
+      toast.success("Successfully logged out!", {
+        autoClose: 5000,
+        position: "top-center"
+      });
+      navigate("/");
+    } catch (error) {
+      toast.error("Logout failed. Please try again.", {
+        autoClose: 5000,
+        position: "top-center"
+      });
+    }
   };
-
+  useEffect(() => {
+    if (user) {
+      dispatch(getCart(accessToken));
+    }
+  }, [user]);
   return (
     <div className="navbar bg-black">
       <div className="flex-1">
@@ -69,7 +90,9 @@ const Navbar = () => {
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              <span className="badge badge-sm indicator-item">8</span>
+              <span className="badge badge-sm indicator-item">
+                {cartItems?.length ? cartItems?.length : 0}
+              </span>
             </div>
           </div>
           {isCartOpen && (
@@ -78,8 +101,15 @@ const Navbar = () => {
               className="card card-compact dropdown-content bg-base-100 z-[1] mt-3 w-52 shadow"
             >
               <div className="card-body">
-                <span className="text-lg font-bold">8 Items</span>
-                <span className="text-info">Subtotal: $999</span>
+                <span className="text-lg font-bold">
+                  {cartItems?.length
+                    ? `${cartItems.length} Items`
+                    : "Empty cart"}
+                </span>
+
+                <span className="text-info">
+                  {totalPrice ? `Subtotal: $ ${totalPrice.toFixed(2)}` : ""}
+                </span>
                 <div className="card-actions">
                   <Link
                     to="/mycart"
@@ -123,15 +153,15 @@ const Navbar = () => {
               <li onClick={handleListItemClick}>
                 <Link to="/mycart">My Cart</Link>
               </li>
-              <li onClick={handleListItemClick}>
+              {/* <li onClick={handleListItemClick}>
                 <Link to="/wishlist">Wishlist</Link>
-              </li>
+              </li> */}
               <li onClick={handleListItemClick}>
                 <Link to="/profile">Profile</Link>
               </li>
-              <li onClick={handleListItemClick}>
+              {/* <li onClick={handleListItemClick}>
                 <Link to="/settings">Settings</Link>
-              </li>
+              </li> */}
               <li onClick={handleListItemClick}>
                 {user ? (
                   <button onClick={handleLogout}>Logout</button>

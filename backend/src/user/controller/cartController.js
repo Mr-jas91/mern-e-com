@@ -3,106 +3,113 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
 import { Cart } from "../../models/cart.models.js";
 import { Product } from "../../models/product.models.js";
-//calculate total cart amout
+
+// Calculate total cart amount
 const calculateTotalPrice = async (cart) => {
   if (!cart || !cart.items || cart.items.length === 0) return 0;
-
-  const productIds = cart.items.map((item) => item.productId);
+  const productIds = cart.items.map((item) => item?.productId?._id);
   if (!productIds.length) return 0;
+
   const products = await Product.find({ _id: { $in: productIds } }).select(
     "price"
   );
-  let totalAmout = 0;
+
+  let totalAmount = 0;
   cart.items.forEach((item) => {
-    const product = products.find((p) => p._id.equals(item.productId));
+    const product = products.find((p) => p._id.equals(item?.productId?._id));
     if (product) {
-      totalAmout += product.price * item.quantity;
+      totalAmount += product.price * item.quantity;
     }
   });
-  return totalAmout;
+  return parseFloat(totalAmount.toFixed(2));
 };
+
 // Add item to cart
 const addToCart = asyncHandler(async (req, res) => {
   const { productId } = req.body;
-  const userId = req.user._id; // Assuming you have user authentication
+  const userId = req.user._id;
 
   const product = await Product.findById(productId);
   if (!product) {
-    res.status(404);
-    throw new Error("Product not found");
+    return res.status(404).json(new ApiError(404, "Product not found"));
   }
 
-  let cart = await Cart.findOne({ userId });
-
-  // If no cart, create a new one
+  let cart = await Cart.findOne({ userId }).select("items totalPrice");
+  // Create a new cart if none exists
   if (!cart) {
     cart = new Cart({ userId, items: [] });
   }
-  // console.log(cart);
+
   // Check if product already exists in the cart
   const itemIndex = cart.items.findIndex(
-    (item) => item.productId.toString() === productId
+    (item) => item?.productId?._id.toString() === productId
   );
 
   if (itemIndex > -1) {
-    // If product exists in the cart, update the quantity
     cart.items[itemIndex].quantity += 1;
   } else {
-    // If product doesn't exist, add new item to cart
-    cart.items.push({ productId });
+    cart.items.push({ productId, quantity: 1 });
   }
-
   // Recalculate total price
-  const totalprice = await calculateTotalPrice(cart);
-  cart.totalPrice = totalprice;
+  cart.totalPrice = await calculateTotalPrice(cart);
   await cart.save();
-  res.status(200).json(new ApiResponse(200, cart));
+  return res.status(200).json(new ApiResponse(200, cart));
 });
 
-//getcart of the product in the cart
+// Get cart for the user
 const getCart = asyncHandler(async (req, res) => {
-  let cart = await Cart.findOne({ userId: req.user._id });
+  let cart = await Cart.findOne({ userId: req.user._id })
+    .populate("items.productId", "name price images discount")
+    .select("items totalPrice");
   if (!cart) {
     cart = new Cart({ userId: req.user._id, items: [] });
   }
-  return res.status(200).json(new ApiResponse(cart));
+  res.status(200).json(new ApiResponse(200, cart));
 });
 
 // Update quantity of a product in the cart
 const updateQuantity = asyncHandler(async (req, res) => {
-  const { productId, quantity } = req.body;
+  const { productId, action } = req.body;
   const userId = req.user._id;
 
-  if (quantity <= 0) {
-    res.status(400);
-    throw new Error("Quantity must be greater than zero");
-  }
-
-  let cart = await Cart.findOne({ userId });
+  let cart = await Cart.findOne({ userId })
+    .populate("items.productId", "name price images discount")
+    .select("items totalPrice");
 
   if (!cart) {
-    res.status(404);
-    throw new Error("Cart not found");
+    return res.status(404).json(new ApiError(404, "Cart not found"));
   }
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.productId.toString() === productId
+    (item) => item._id.toString() === productId
   );
 
   if (itemIndex === -1) {
-    res.status(404);
-    throw new Error("Product not found in cart");
+    return res.status(404).json(new ApiError(404, "Product not found in cart"));
   }
 
-  // Update quantity of the product in the cart
-  cart.items[itemIndex].quantity = quantity;
+  // Determine the current quantity
+  let currentQuantity = cart.items[itemIndex].quantity;
+
+  // Handle increase and decrease logic
+  if (action === "increase") {
+    cart.items[itemIndex].quantity = currentQuantity + 1;
+  } else if (action === "decrease") {
+    if (currentQuantity === 1) {
+      cart.items.splice(itemIndex, 1);
+    } else {
+      cart.items[itemIndex].quantity = currentQuantity - 1;
+    }
+  } else {
+    return res.status(400).json(new ApiError(400, "Invalid action type"));
+  }
 
   // Recalculate total price
-  const totalprice = await calculateTotalPrice(cart);
-  cart.totalPrice = totalprice;
-
+  cart.totalPrice = await calculateTotalPrice(cart);
   await cart.save();
-  res.status(200).json(new ApiResponse(200, cart));
+
+  // Return the updated cart directly without making another DB call
+  return res.status(200).json(new ApiResponse(200, cart));
 });
 
 // Remove product from cart
@@ -110,29 +117,27 @@ const removeFromCart = asyncHandler(async (req, res) => {
   const { productId } = req.body;
   const userId = req.user._id;
 
-  let cart = await Cart.findOne({ userId });
-
+  let cart = await Cart.findOne({ userId })
+    .populate("items.productId", "name price images discount")
+    .select("items totalPrice");
   if (!cart) {
-    res.status(404);
-    throw new Error("Cart not found");
+    throw new ApiError(404, "Cart not found");
   }
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.productId.toString() === productId
+    (item) => item?._id.toString() === productId
   );
-
   if (itemIndex === -1) {
-    res.status(404);
-    throw new Error("Product not found in cart");
+    throw new ApiError(404, "Product not found in cart");
   }
 
   // Remove product from cart
   cart.items.splice(itemIndex, 1);
 
   // Recalculate total price
-  const totalprice = await calculateTotalPrice();
-  cart.totalPrice = totalprice;
+  cart.totalPrice = await calculateTotalPrice(cart);
   await cart.save();
+
   res.status(200).json(new ApiResponse(200, cart));
 });
 

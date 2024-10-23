@@ -1,49 +1,51 @@
-import React from "react";
-import { Container, Typography, Box } from "@mui/material";
-import OrderProductCard from "../components/Product/OrderProductCard";
+import React, { useEffect } from "react";
+import { Container, Typography, Box, CircularProgress } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import OrderProductCard from "../components/OrderHistory/OrderProductCard";
+import { getOrders } from "../../redux/reducers/orderReducer.js";
+
 const OrderHistoryPage = () => {
-  // This would typically come from an API or state management
-  const orders = [
-    {
-      id: "1",
-      name: "Wireless Headphones",
-      price: 99.99,
-      image: "https://via.placeholder.com/100x100",
-      orderDate: "2023-06-01",
-      status: "Delivered",
-    },
-    {
-      id: "2",
-      name: "Smartphone",
-      price: 599.99,
-      image: "https://via.placeholder.com/100x100",
-      orderDate: "2023-06-15",
-      status: "Shipped",
-    },
-    {
-      id: "3",
-      name: "Laptop",
-      price: 1299.99,
-      image: "https://via.placeholder.com/100x100",
-      orderDate: "2023-06-20",
-      status: "Processing",
-    },
-  ];
+  const dispatch = useDispatch();
+  const { myorders, loading } = useSelector((state) => state.orders);
+  const accessToken = useSelector((state) => state.auth.accessToken);
+
+  // Use useEffect to fetch orders only once when component mounts
+  useEffect(() => {
+    if (!myorders || myorders.length === 0) {
+      dispatch(getOrders(accessToken));
+    }
+  }, [dispatch, myorders, accessToken]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="md">
       <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
         Order History
       </Typography>
-      {orders.length > 0 ? (
-        orders.map((order) => <OrderProductCard key={order.id} order={order} />)
+      {myorders?.length > 0 ? (
+        myorders.map((orders) =>
+          orders?.orderItems?.map((item) => (
+            <OrderProductCard
+              key={item._id}
+              order={item}
+              orderDetails={[orders]}
+            />
+          ))
+        )
       ) : (
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "50vh",
+            height: "50vh"
           }}
         >
           <Typography variant="h6" color="text.secondary">

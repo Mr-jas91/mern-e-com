@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Container,
   Grid,
@@ -20,25 +20,68 @@ import {
   Divider,
 } from "@mui/material";
 import { ShoppingCart, LocalShipping } from "@mui/icons-material";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchProductById } from "../../redux/reducers/productReducer.js";
+import {
+  addToCart,
+  resetCartNotification,
+} from "../../redux/reducers/cartReducer.js";
+import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer.js";
+import { toast } from "react-toastify";
 
 const ProductLandingPage = () => {
-  const [pincode, setPincode] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState(null);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const product = {
-    name: "Premium Wireless Headphones",
-    description:
-      "Experience crystal-clear sound with our premium wireless headphones. Featuring noise-cancellation technology and long-lasting battery life.",
-    category: "Electronics",
-    price: 199.99,
-    discount: 20,
-    rating: 4.5,
-    images: [
-      "https://via.placeholder.com/400x400",
-      "https://via.placeholder.com/400x400",
-      "https://via.placeholder.com/400x400",
-    ],
-  };
+  const [deliveryDate, setDeliveryDate] = useState(null);
+  const [pincode, setPincode] = useState("");
+  const { id } = useParams();
+  const { products, selectedProduct, loading, error } = useSelector(
+    (state) => state.products
+  );
+  const { accessToken } = useSelector((state) => state.auth);
+  const { addCartSuccess, addCartError } = useSelector((state) => state.cart);
+  const [product, setProduct] = useState(null);
+
+  useEffect(() => {
+    if (products?.length > 0) {
+      const foundProduct = products.find((product) => product?._id === id);
+      setProduct(foundProduct);
+    } else {
+      dispatch(fetchProductById(id));
+    }
+  }, [id, dispatch]);
+
+  // Handle toast notifications for cart actions
+  useEffect(() => {
+    if (addCartSuccess) {
+      toast.success("Product added to cart successfully!", {
+        autoClose: 5000,
+      });
+      dispatch(resetCartNotification());
+    } else if (addCartError) {
+      toast.error("Unable to add product to cart.", {
+        autoClose: 5000,
+      });
+      dispatch(resetCartNotification());
+    }
+  }, [addCartSuccess, addCartError]);
+
+  if (loading) {
+    return <h1>Loading...</h1>;
+  }
+
+  if (error || !product) {
+    return <h1>Product not found</h1>;
+  }
+
+  const productImages =
+    product?.images?.length > 0
+      ? product.images
+      : [
+          "https://via.placeholder.com/400x400",
+          "https://via.placeholder.com/400x400",
+          "https://via.placeholder.com/400x400",
+        ];
 
   const reviews = [
     {
@@ -57,10 +100,9 @@ const ProductLandingPage = () => {
     },
   ];
 
-  const finalPrice = product.price * (1 - product.discount / 100);
+  const finalPrice = product?.price * (1 - product.discount / 100);
 
   const handlePincodeCheck = () => {
-    // Simulate API call to check delivery date
     setTimeout(() => {
       const date = new Date();
       date.setDate(date.getDate() + 3); // Delivery in 3 days
@@ -68,6 +110,16 @@ const ProductLandingPage = () => {
     }, 1000);
   };
 
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    dispatch(addToCart({ productId: id, accessToken }));
+  };
+
+  const handleAddToCheckout = () => {
+    dispatch(ADD_TO_CHECKOUT([{ ...product, quantity: 1 }]));
+    toast.success("Product added to checkout!", { autoClose: 3000 });
+    navigate("/checkout");
+  };
   return (
     <Container maxWidth="lg">
       <Grid container spacing={4} sx={{ my: 4 }}>
@@ -76,16 +128,17 @@ const ProductLandingPage = () => {
             <CardMedia
               component="img"
               height="400"
-              image={product.images[0]}
-              alt={product.name}
+              image={productImages[0]}
+              alt={product?.name}
+              sx={{ borderBottom: "1px solid #ccc" }}
             />
-            <CardContent>
+            <CardContent sx={{ borderTop: "1px solid #ccc" }}>
               <Grid container spacing={2}>
-                {product.images.map((image, index) => (
+                {productImages.map((image, index) => (
                   <Grid item key={index} xs={4}>
                     <img
                       src={image}
-                      alt={`${product.name} ${index + 1}`}
+                      alt={`${product?.name} ${index + 1}`}
                       style={{ width: "100%", height: "auto" }}
                     />
                   </Grid>
@@ -96,19 +149,19 @@ const ProductLandingPage = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography variant="h4" gutterBottom>
-            {product.name}
+            {product?.name}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-            Category: {product.category}
+            Category: {product?.category}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Rating value={product.rating} precision={0.5} readOnly />
+            <Rating value={product?.rating?.rate} precision={0.5} readOnly />
             <Typography variant="body2" sx={{ ml: 1 }}>
-              ({product.rating})
+              ({product?.rating?.rate})
             </Typography>
           </Box>
           <Typography variant="body1" paragraph>
-            {product.description}
+            {product?.description}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
             <Typography
@@ -116,26 +169,30 @@ const ProductLandingPage = () => {
               color="text.secondary"
               sx={{ textDecoration: "line-through", mr: 2 }}
             >
-              ${product.price.toFixed(2)}
+              ${product?.price.toFixed(2)}
             </Typography>
             <Typography variant="h5" color="error">
               ${finalPrice.toFixed(2)}
             </Typography>
             <Chip
-              label={`${product.discount}% OFF`}
+              label={`${product?.discount}% OFF`}
               color="error"
               size="small"
               sx={{ ml: 2 }}
             />
           </Box>
           <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-            <Button variant="contained" startIcon={<ShoppingCart />}>
+            <Button
+              variant="contained"
+              startIcon={<ShoppingCart />}
+              onClick={handleAddToCart}
+            >
               Add to Cart
             </Button>
             <Button
               variant="contained"
               color="secondary"
-              onClick={() => navigate("/checkout")}
+              onClick={handleAddToCheckout}
             >
               Order Now
             </Button>
@@ -170,7 +227,7 @@ const ProductLandingPage = () => {
           Customer Reviews
         </Typography>
         <List>
-          {reviews.map((review) => (
+          {reviews?.map((review) => (
             <React.Fragment key={review.id}>
               <ListItem alignItems="flex-start">
                 <ListItemAvatar>

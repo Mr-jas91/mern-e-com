@@ -1,15 +1,37 @@
-import React from "react";
-import { Container, Typography, Grid, Box } from "@mui/material";
-import ProductCard from "../components/Product/ProductCard";
+import React, { useEffect } from "react";
+import { Container, Box } from "@mui/material";
+import { toast } from "react-toastify";
 import Carousel from "../components/Carousel/Carousel";
 import ProductGrid from "../components/Product/ProductGrid";
 import { useSelector, useDispatch } from "react-redux";
+import { fetchAllProducts } from "../../redux/reducers/productReducer";
+import { resetCartNotification } from "../../redux/reducers/cartReducer";
 
 // Main HomePage Component
 export default function HomePage() {
-  const count = useSelector((state) => state.auth.loading);
-  console.log(count);
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((state) => state.auth);
+  const { products } = useSelector((state) => state.products);
+  const { addCartError, addCartSuccess } = useSelector((state) => state.cart);
+  useEffect(() => {
+    dispatch(fetchAllProducts());
+  }, [user]);
 
+  // Show toast messages based on the result of the addToCart action
+  useEffect(() => {
+    if (addCartSuccess) {
+      toast.success("Product added to cart successfully!", {
+        autoClose: 5000,
+      });
+      dispatch(resetCartNotification());
+    } else if (addCartError) {
+      toast.error("Unable to add product to cart.", {
+        autoClose: 5000,
+      });
+      dispatch(resetCartNotification());
+    }
+  }, [addCartSuccess, addCartError, dispatch]);
+  let productItem = products;
   const carouselItems = [
     {
       src: "https://via.placeholder.com/1440x400",
@@ -25,33 +47,6 @@ export default function HomePage() {
       src: "https://via.placeholder.com/1440x400",
       title: "Free Shipping",
       description: "On orders over $50",
-    },
-  ];
-
-  const recommendedProducts = [
-    {
-      id: 1,
-      name: "Product 1",
-      price: 19.99,
-      image: "https://via.placeholder.com/300x300",
-    },
-    {
-      id: 2,
-      name: "Product 2",
-      price: 29.99,
-      image: "https://via.placeholder.com/300x300",
-    },
-    {
-      id: 3,
-      name: "Product 3",
-      price: 39.99,
-      image: "https://via.placeholder.com/300x300",
-    },
-    {
-      id: 4,
-      name: "Product 4",
-      price: 49.99,
-      image: "https://via.placeholder.com/300x300",
     },
   ];
 
@@ -110,25 +105,24 @@ export default function HomePage() {
   ];
 
   const categories = [
-    { id: "electronics", name: "Electronics", products: recommendedProducts },
+    { id: "electronics", name: "Electronics", products: "" },
     { id: "clothing", name: "Clothing", products: topSellingProducts },
     { id: "home", name: "Home & Garden", products: featuredProducts },
   ];
-
+  if (loading) {
+    return <h1>Loading...</h1>;
+  }
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4, display: { xs: "none", md: "block" } }}>
         <Carousel images={carouselItems} />
       </Box>
 
-      <ProductGrid
-        title="Recommended Products"
-        products={recommendedProducts}
-      />
-      <ProductGrid title="Top Selling Products" products={topSellingProducts} />
-      <ProductGrid title="Featured Products" products={featuredProducts} />
+      <ProductGrid title="Recommended Products" products={products} />
+      {/* <ProductGrid title="Top Selling Products" products={topSellingProducts} />
+    <ProductGrid title="Featured Products" products={featuredProducts} /> */}
 
-      <Box sx={{ my: 4 }}>
+      {/* <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom>
           Shop by Category
         </Typography>
@@ -146,7 +140,7 @@ export default function HomePage() {
             </Grid>
           </Box>
         ))}
-      </Box>
+      </Box> */}
     </Container>
   );
 }

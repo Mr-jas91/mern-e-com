@@ -15,60 +15,98 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const SearchPage = lazy(() => import("./pages/SearchResultPage"));
 const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const Navbar = lazy(() => import("./components/Navbar/Navbar"));
-
+import OrderDetailsPage from "./pages/OrderDetailsPage";
+import PrivateRoute from "./route/PrivateRoute";
+import PublicRoute from "./route/PublicRoute";
 function UserRoutes() {
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Navbar />
+        <ToastContainer
+          position="top-center"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          draggable
+          pauseOnHover
+          theme="light"
+        />
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          {/* <Route
-                      path="/register"
-                      element={
-                        <PublicRoute
-                          element={<RegisterPage />}
-                          restricted={true}
-                        />
-                      }
-                    />
-                    <Route
-                      path="/search-results"
-                      element={<PublicRoute element={<SearchPage />} />}
-                    /> */}
+          <Route path="/" element={<PublicRoute element={<HomePage />} />} />
+          <Route
+            path="/products/:id"
+            element={<PublicRoute element={<ProductPage />} />}
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute
+                element={<LoginPage />}
+                restricted={true}
+                redirectTo="/"
+              />
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute
+                element={<RegisterPage />}
+                restricted={true}
+                redirectTo="/"
+              />
+            }
+          />
 
           {/* Private routes */}
-          {/* <Route
-                      path="/mycart"
-                      element={<PrivateRoute element={<CartPage />} />}
-                    />
-                    <Route
-                      path="/checkout"
-                      element={<PrivateRoute element={<CheckoutPage />} />}
-                    />
-                    <Route
-                      path="/profile"
-                      element={<PrivateRoute element={<ProfilePage />} />}
-                    />
-                    <Route
-                      path="/myorders"
-                      element={<PrivateRoute element={<OrderHistoryPage />} />}
-                    />
-                    <Route
-                      path="/products/:productId"
-                      element={<PrivateRoute element={<ProductPage />} />}
-                    />
-                    <Route
-                      path="/wishlist"
-                      element={<PrivateRoute element={<WishlistPage />} />}
-                    /> */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute element={<ProfilePage />} redirectTo="/login" />
+            }
+          />
+          <Route
+            path="/mycart"
+            element={
+              <PrivateRoute element={<CartPage />} redirectTo="/login" />
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <PrivateRoute element={<CheckoutPage />} redirectTo="/login" />
+            }
+          />
+          <Route
+            path="/myorders"
+            element={
+              <PrivateRoute
+                element={<OrderHistoryPage />}
+                redirectTo="/login"
+              />
+            }
+          />
+          <Route
+            path="/myorder/:id/:productid"
+            element={
+              <PrivateRoute
+                element={<OrderDetailsPage />}
+                redirectTo="/login"
+              />
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <PrivateRoute element={<WishlistPage />} redirectTo="/login" />
+            }
+          />
 
           {/* Fallback route */}
-          <Route path="*" element={<HomePage />} />
+          <Route path="*" element={<PublicRoute element={<HomePage />} />} />
         </Routes>
-        <ToastContainer /> {/* Add the ToastContainer component */}
       </Suspense>
     </Router>
   );

@@ -13,64 +13,91 @@ import {
   Avatar,
   Divider,
   Box,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { Navigate, useNavigate } from "react-router-dom";
+import { createOrder } from "../../redux/reducers/orderReducer";
 
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Product 1",
-    price: 19.99,
-    quantity: 2,
-    image: "https://via.placeholder.com/400x400",
-  },
-  {
-    id: 2,
-    name: "Product 2",
-    price: 29.99,
-    quantity: 1,
-    image: "https://via.placeholder.com/400x400",
-  },
-  {
-    id: 3,
-    name: "Product 3",
-    price: 39.99,
-    quantity: 3,
-    image: "https://via.placeholder.com/400x400",
-  },
-];
 
 export default function CheckoutPage() {
-  const [cartItems] = useState(initialCartItems);
-  const [address, setAddress] = useState({
+  const dispatch = useDispatch();
+  const navigate = useNavigate()
+  const { products } = useSelector((state) => state.checkout);
+  const { loading, success } = useSelector((state) => state.orders);
+  const accessToken = useSelector((state) => state.auth.accessToken);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [shippingAddress, setShippingAddress] = useState({
     fullName: "",
-    addressLine1: "",
-    addressLine2: "",
+    address: "",
+    landmark: "",
     city: "",
     state: "",
-    zipCode: "",
-    country: "",
+    pincode: "",
+    mobileNo: ""
   });
 
   const handleAddressChange = (event) => {
     const { name, value } = event.target;
-    setAddress((prevAddress) => ({
+    setShippingAddress((prevAddress) => ({
       ...prevAddress,
-      [name]: value,
+      [name]: value
     }));
   };
 
-  const subtotal = cartItems.reduce(
+  const subtotal = products.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const discount = subtotal * 0.1; // 10% discount
+  const discount = products.reduce(
+    (sum, item) => sum + item.discount * item.quantity,
+    0
+  );
   const finalPrice = subtotal - discount;
 
   const handlePlaceOrder = () => {
-    console.log("Order placed", { cartItems, address, finalPrice });
-    // Here you would typically send this data to your backend
+    if (
+      !shippingAddress.fullName ||
+      !shippingAddress.address ||
+      !shippingAddress.landmark ||
+      !shippingAddress.city ||
+      !shippingAddress.state ||
+      !shippingAddress.pincode ||
+      !shippingAddress.mobileNo
+    ) {
+      toast.error("All field is required", {
+        autoClose: 2000,
+        position: "top-center"
+      });
+    } else {
+      const orderItems = products.map((item) => ({
+        productId: item._id,
+        quantity: item.quantity
+      }));
+      // console.log("Order placed", { orderItems, shippingAddress, finalPrice });
+      dispatch(
+        createOrder({
+          orderItems,
+          shippingAddress,
+          orderPrice: finalPrice,
+          accessToken
+        })
+      );
+      if (success) {
+        toast.success("Order placed successfully.", {
+          autoClose: 2000,
+          position: "top-center"
+        });
+        navigate("/");
+      }
+    }
   };
-
+  const handlePaymentMethodChange = (e) => {
+    setPaymentMethod(e.target.value);
+  };
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
@@ -83,22 +110,42 @@ export default function CheckoutPage() {
               Order Summary
             </Typography>
             <List>
-              {cartItems.map((item) => (
-                <React.Fragment key={item.id}>
+              {products.map((item) => (
+                <React.Fragment key={item?._id}>
                   <ListItem>
                     <ListItemAvatar>
                       <Avatar
-                        src={item.image}
-                        alt={item.name}
+                        src={item?.images[0]}
+                        alt={item?.name}
                         variant="square"
                       />
                     </ListItemAvatar>
                     <ListItemText
-                      primary={item.name}
-                      secondary={`Quantity: ${item.quantity}`}
+                      primary={item?.name}
+                      secondary={`Quantity: ${item?.quantity}`}
                     />
-                    <Typography variant="body2">
-                      ${(item.price * item.quantity).toFixed(2)}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        textDecoration: "line-through",
+                        mr: 2,
+                        color: "text.secondary"
+                      }}
+                    >
+                      ${(item?.price * item?.quantity).toFixed(2)}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "error.main",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      $
+                      {(
+                        item?.price * item?.quantity -
+                        item?.discount * item?.quantity
+                      ).toFixed(2)}
                     </Typography>
                   </ListItem>
                   <Divider variant="inset" component="li" />
@@ -117,7 +164,7 @@ export default function CheckoutPage() {
                   fullWidth
                   label="Full Name"
                   name="fullName"
-                  value={address.fullName}
+                  value={shippingAddress.fullName}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -125,18 +172,18 @@ export default function CheckoutPage() {
                 <TextField
                   required
                   fullWidth
-                  label="Address Line 1"
-                  name="addressLine1"
-                  value={address.addressLine1}
+                  label="Address"
+                  name="address"
+                  value={shippingAddress.address}
                   onChange={handleAddressChange}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Address Line 2"
-                  name="addressLine2"
-                  value={address.addressLine2}
+                  label="Landmark"
+                  name="landmark"
+                  value={shippingAddress.landmark}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -146,7 +193,7 @@ export default function CheckoutPage() {
                   fullWidth
                   label="City"
                   name="city"
-                  value={address.city}
+                  value={shippingAddress.city}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -154,9 +201,9 @@ export default function CheckoutPage() {
                 <TextField
                   required
                   fullWidth
-                  label="State/Province"
+                  label="State"
                   name="state"
-                  value={address.state}
+                  value={shippingAddress.state}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -164,9 +211,9 @@ export default function CheckoutPage() {
                 <TextField
                   required
                   fullWidth
-                  label="ZIP / Postal code"
-                  name="zipCode"
-                  value={address.zipCode}
+                  label="PIN CODE"
+                  name="pincode"
+                  value={shippingAddress.pincode}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -174,9 +221,9 @@ export default function CheckoutPage() {
                 <TextField
                   required
                   fullWidth
-                  label="Country"
-                  name="country"
-                  value={address.country}
+                  label="Mobile No."
+                  name="mobileNo"
+                  value={shippingAddress.mobileNo}
                   onChange={handleAddressChange}
                 />
               </Grid>
@@ -194,7 +241,7 @@ export default function CheckoutPage() {
                 <Typography variant="body2">${subtotal.toFixed(2)}</Typography>
               </ListItem>
               <ListItem>
-                <ListItemText primary="Discount (10%)" />
+                <ListItemText primary="Discount" />
                 <Typography variant="body2">-${discount.toFixed(2)}</Typography>
               </ListItem>
               <ListItem>
@@ -202,12 +249,43 @@ export default function CheckoutPage() {
                 <Typography variant="h6">${finalPrice.toFixed(2)}</Typography>
               </ListItem>
             </List>
+
+            {/* Payment Methods */}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Payment Method
+              </Typography>
+              <RadioGroup
+                aria-label="payment-method"
+                name="paymentMethod"
+                value={paymentMethod}
+                onChange={handlePaymentMethodChange}
+              >
+                <FormControlLabel
+                  value="ONLINE UPI"
+                  control={<Radio />}
+                  label="ONLINE UPI"
+                />
+                <FormControlLabel
+                  value="DEBIT CARD"
+                  control={<Radio />}
+                  label="Debit Card"
+                />
+                <FormControlLabel
+                  value="COD"
+                  control={<Radio />}
+                  label="Cash on Delivery (COD)"
+                />
+              </RadioGroup>
+            </Box>
+
             <Box sx={{ mt: 2 }}>
               <Button
                 variant="contained"
                 color="primary"
                 fullWidth
                 size="large"
+                disabled={loading}
                 onClick={handlePlaceOrder}
               >
                 Place Order

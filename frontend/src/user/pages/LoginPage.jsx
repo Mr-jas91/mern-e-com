@@ -11,9 +11,12 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import { loginUser } from "../../redux/reducers/authReducer.js";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
 const LoginPage = () => {
-  const count = useSelector((state) => state.auth.user);
-  console.log(count);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user, loading, error } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -31,7 +34,30 @@ const LoginPage = () => {
   // Handle form submission (login)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await loginUser(formData);
+    try {
+      const res = await dispatch(loginUser(formData));
+      if (res.payload.success) {
+        toast.success("Successfully logged in!", {
+          autoClose: 5000,
+          position: "top-center",
+        });
+        setFormData({
+          email: "",
+          password: "",
+        });
+        navigate("/");
+      } else {
+        toast.error(res.payload.data, {
+          autoClose: 5000,
+          position: "top-center",
+        });
+      }
+    } catch (error) {
+      toast.error(error.message, {
+        autoClose: 5000,
+        position: "top-center",
+      });
+    }
   };
 
   // Redirect to register page
@@ -55,7 +81,6 @@ const LoginPage = () => {
                 name="email"
                 type="email"
                 onChange={handleChange}
-                // disabled={loading} // Disable inputs while loading
               />
             </Grid>
             <Grid item xs={12}>
@@ -66,7 +91,6 @@ const LoginPage = () => {
                 name="password"
                 type="password"
                 onChange={handleChange}
-                // disabled={loading} // Disable inputs while loading
               />
             </Grid>
           </Grid>
@@ -76,22 +100,21 @@ const LoginPage = () => {
             variant="contained"
             color="primary"
             sx={{ mt: 3, mb: 2 }}
-            // disabled={loading} // Disable the button when loading
+            disabled={loading} // Disable the button when loading
           >
-            {/* {loading ? "Logging in..." : "Login"} */}
-            Login
+            {loading ? "Logging in..." : "Login"}
           </Button>
           <Button
             fullWidth
             variant="outlined"
             onClick={handleRegisterRedirect}
-            // disabled={loading} // Disable register button while loading
+            disabled={loading}
           >
             Don't have an account? Register
           </Button>
         </Box>
       </Paper>
-      <ToastContainer />
+     
     </Container>
   );
 };

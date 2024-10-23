@@ -7,22 +7,20 @@ import { Types } from "mongoose";
 const { ObjectId } = Types;
 // @desc Create user's new order
 const createOrder = asyncHandler(async (req, res) => {
-  const { orderItems, shippingAddress } = req.body;
+  const { orderItems, shippingAddress, orderPrice } = req.body;
   // Validate that orderItems are provided
-  if (!orderItems || orderItems.length === 0) {
-    throw new ApiError(400, "No order items provided");
+  if (orderItems.length === 0) {
+    return res.status(400).json(new ApiError(400, "No order items provided"));
   }
   if (!shippingAddress) {
-    throw new ApiError(404, "Shipping address is required");
+    return res
+      .status(404)
+      .json(new ApiError(404, "Shipping address is required"));
   }
-  // Calculate the total order price
-  let orderPrice = 0;
-  for (const item of orderItems) {
-    const product = await Product.findById(item.productId);
-    if (!product) {
-      throw new ApiError(404, `Product not found: ${item.productId}`);
-    }
-    orderPrice += product.price * item.quantity; // Calculate total price
+  if (!orderPrice) {
+    return res
+      .status(404)
+      .json(new ApiError(404, "Order price must be required."));
   }
 
   // Create a new order
@@ -30,7 +28,7 @@ const createOrder = asyncHandler(async (req, res) => {
     customer: req.user._id,
     orderItems,
     shippingAddress,
-    orderPrice,
+    orderPrice
   });
 
   // Save the new order to the database
@@ -38,84 +36,94 @@ const createOrder = asyncHandler(async (req, res) => {
 
   res.status(201).json(
     new ApiResponse(201, {
-      message: "Order placed successfully",
-      order: savedOrder,
+      message: "fetched successfully",
+      order: savedOrder
     })
   );
 });
 
 // @desc Get user's order history
 const getUserOrderHistory = asyncHandler(async (req, res) => {
-  let orders = await Order.find({ customer: req.user._id })
-    .select("orderItems createdAt")
-    .populate({
-      path: "orderItems.productId",
-      model: "Product",
-      select: "name price images[0]",
-    })
-    .populate({ path: "orderItems.deliveryStatus" });
+  let orders = await Order.find({ customer: req.user._id }).populate({
+    path: "orderItems.productId",
+    model: "Product",
+    select: "name price images"
+  }).limit(10);
   if (!orders) {
     orders = new Order({
       customer: req.user._id,
       orderItems: [],
       ShippingAddress: null,
       orderPrice: 0,
-      deliveryStatus: null,
+      deliveryStatus: null
     });
   }
-  res.json(new ApiResponse(200, { orders }));
+  res.status(201).json(
+    new ApiResponse(201, {
+      message: "Order fetched successfully",
+      order: orders
+    })
+  );
 });
 
 // @desc Get order details
 const getOrderDetails = asyncHandler(async (req, res) => {
-  const orderId = req.params.orderId; // Get the orderId from the request parameters
+  const orderId = req.params.orderId;
 
-  console.log("Order ID:", orderId);
-  const productId = new ObjectId(req.body.productId);
+  const orderDetails = await Order.findOne({
+    "orderItems._id": orderId
+  }).populate({
+    path: "orderItems.productId",
+    model: "Product",
+    select: "name price images"
+  });
 
-  const orderDetails = await Order.aggregate([
-    {
-      $match: {
-        _id: new ObjectId(orderId),
-      },
-    },
-    {
-      $unwind: "$orderItems",
-    },
-    {
-      $match: {
-        "orderItems.productId": new ObjectId(req.body.productId),
-      },
-    },
-    {
-      $lookup: {
-        from: "Products",
-        localField: "orderItems.productId",
-        foreignField: "_id",
-        as: "productDetails",
-      },
-    },
-    {
-      $unwind: "$productDetails",
-    },
-    {
-      $project: {
-        shippingAddress: 1,
-        paymentMethod: 1,
-        paymentStatus: 1,
-        createdAt: 1,
-        orderItems: 1,
-        productDetails: {
-          name: "$productDetails.name",
-          price: "$productDetails.price",
-          images: "$productDetails.images",
-          discount: "$productDetails.discount",
-        },
-      },
-    },
-  ]);
+  // console.log("Order ID:", orderId);
+  // const productId = new ObjectId(req.body.productId);
 
-  // // Check if orderDetails array is empty
+  // const orderDetails = await Order.aggregate([
+  //   {
+  //     $match: {
+  //       _id: new ObjectId(orderId)
+  //     }
+  //   },
+  //   {
+  //     $unwind: "$orderItems"
+  //   },
+  //   {
+  //     $match: {
+  //       "orderItems.productId": new ObjectId(req.body.productId)
+  //     }
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "Products",
+  //       localField: "orderItems.productId",
+  //       foreignField: "_id",
+  //       as: "productDetails"
+  //     }
+  //   },
+  //   {
+  //     $unwind: "$productDetails"
+  //   },
+  //   {
+  //     $project: {
+  //       shippingAddress: 1,
+  //       paymentMethod: 1,
+  //       paymentStatus: 1,
+  //       createdAt: 1,
+  //       orderItems: 1,
+  //       productDetails: {
+  //         name: "$productDetails.name",
+  //         price: "$productDetails.price",
+  //         images: "$productDetails.images",
+  //         discount: "$productDetails.discount"
+  //       }
+  //     }
+  //   }
+  // ]);
+
+  // // // Check if orderDetails array is empty
   if (orderDetails.length === 0) {
     throw new ApiError(404, "Order not found"); // Return a 404 error if not found
   }
@@ -151,8 +159,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
     orderId,
     {
       $set: {
-        [`orderItems.${orderItemIndex}.deliveryStatus`]: "CANCELLED",
-      },
+        [`orderItems.${orderItemIndex}.deliveryStatus`]: "CANCELLED"
+      }
     },
     { new: true } // This option returns the updated document
   );

@@ -6,7 +6,9 @@ import { Category } from "../../models/category.models.js";
 
 //getProduct API
 const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find().limit(10);
+  const products = await Product.find()
+    .select("name price description  images discount category ratings")
+    .limit(12);
   if (!products) {
     return res.status(404).json(new ApiError(404, "Products not found"));
   }
@@ -15,7 +17,9 @@ const getProducts = asyncHandler(async (req, res) => {
 
 //getProductDetails API
 const getProductDetails = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
+  const product = await Product.findById(req.params.id).select(
+    "name price description  images discount category ratings"
+  );
   if (!product) {
     return res.status(404).json(new ApiError(404, "Product not found"));
   }
@@ -26,7 +30,9 @@ const getProductDetails = asyncHandler(async (req, res) => {
 const getProductDetailsByCategory = asyncHandler(async (req, res) => {
   const products = await Product.find({
     category: req.params.categoryId,
-  }).limit(10);
+  })
+    .select("name price description  images discount category ratings")
+    .limit(10);
   if (!products.length) {
     return res
       .status(404)

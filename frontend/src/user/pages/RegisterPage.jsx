@@ -11,10 +11,11 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/UserContext.jsx";
-
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../../redux/reducers/authReducer.js";
 const RegisterPage = () => {
-  const { register, loading } = useAuth(); // Accessing the register function and loading state from UserContext
+  const dispatch = useDispatch();
+  const { user, loading, error } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -40,25 +41,29 @@ const RegisterPage = () => {
       toast.error("Passwords do not match.");
       return;
     }
-
     try {
-      // Call the register function from context
-      await register(formData);
-      toast.success("Registration successful!");
-
-      // Reset the form on successful registration
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-
-      // Navigate to the home page or login page
-      navigate("/login");
+      const res = await dispatch(registerUser(formData));
+      if (res.payload.success) {
+        toast.success("Successfully registered!", {
+          autoClose: 5000,
+          position: "top-center",
+        });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        navigate("/");
+      } else {
+        toast.error(res.payload.data, {
+          autoClose: 5000,
+          position: "top-center",
+        });
+      }
     } catch (error) {
-      toast.error(error.message || "Registration failed. Please try again.");
+      toast.error(error.message);
     }
   };
 
@@ -154,16 +159,15 @@ const RegisterPage = () => {
         </Box>
         <Typography variant="body2" align="center" sx={{ mt: 2 }}>
           Already have an account?{" "}
-          <Button variant="text" onClick={handleLoginRedirect} disabled={loading}>
+          <Button
+            variant="text"
+            onClick={handleLoginRedirect}
+            disabled={loading}
+          >
             Login
           </Button>
         </Typography>
       </Paper>
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-      />
     </Container>
   );
 };

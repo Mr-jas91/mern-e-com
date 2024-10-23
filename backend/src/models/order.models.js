@@ -1,21 +1,21 @@
 import mongoose from "mongoose";
-// Schema for each item in the order
+
 const orderItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-    required: true, // Ensures productId is always provided
+    required: true 
   },
   quantity: {
     type: Number,
     required: true,
-    min: 1, // Ensures at least 1 item is ordered
+    min: 1 
   },
   deliveryStatus: {
     type: String,
     enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
-    default: "PENDING", // Default status is PENDING
-  },
+    default: "PENDING" 
+  }
 });
 
 // Schema for the whole order
@@ -24,40 +24,38 @@ const orderSchema = new mongoose.Schema(
     orderPrice: {
       type: Number,
       required: true,
-      min: [0, "Order price must be positive"], // Validation for positive price
+      min: [0, "Order price must be positive"]
     },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true, // Makes sure an order cannot be created without a customer
+      required: true
     },
     orderItems: {
       type: [orderItemSchema],
-      required: true, // At least one item must be in the order
-      validate: [arrayLimit, "{PATH} must have at least 1 order item"], // Custom validation to ensure non-empty
+      required: true,
+      validate: [arrayLimit, "{PATH} must have at least 1 order item"]
     },
     shippingAddress: {
       type: Object,
-      required: true, // Shipping address is mandatory
+      required: true
     },
     paymentMethod: {
       type: String,
-      required: true, // Payment method is mandatory
-      enum: ["ONLINE_UPI", "DEBIT_CARD", "COD"], // Payment method can be ONLINE_UPI, DEBIT_CARD, or PAYPAL
-      default: "ONLINE_UPI", // Default payment method is ONLINE_UPI
+      required: true,
+      enum: ["ONLINE_UPI", "DEBIT_CARD", "COD"],
+      default: "COD"
     },
     paymentStatus: {
       type: String,
-      required: true, // Payment status is mandatory
-      enum: ["UNPAID", "PAID", "REFUNDED"], // Payment status can be UNPAID, PAID, or REFUNDED
-      default: "UNPAID", // Default payment status is UNPAID
-    },
-    
+      required: true,
+      enum: ["UNPAID", "PAID", "REFUNDED"],
+      default: "UNPAID"
+    }
   },
-  { timestamps: true } // Adds createdAt and updatedAt timestamps automatically
+  { timestamps: true }
 );
 
-// Custom validator to ensure at least one item is ordered
 function arrayLimit(val) {
   return val.length > 0;
 }

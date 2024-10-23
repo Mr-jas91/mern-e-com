@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
@@ -9,49 +9,77 @@ import {
   Divider,
 } from "@mui/material";
 import Cart from "../components/Cart/Cart";
+import { useDispatch, useSelector } from "react-redux";
+import { getCart } from "../../redux/reducers/cartReducer";
+import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer";
+import { toast } from "react-toastify";
+
 export default function CartPage() {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState([
-    { id: 1, name: "Product 1", price: 19.99, quantity: 2 },
-    { id: 2, name: "Product 2", price: 29.99, quantity: 1 },
-    { id: 3, name: "Product 3", price: 39.99, quantity: 3 },
-  ]);
+  const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.auth);
+  const { cartItems, totalPrice, loading } = useSelector((state) => state.cart);
 
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  useEffect(() => {
+    dispatch(getCart(accessToken));
+  }, [dispatch, accessToken]);
+
+  if (loading) {
+    return <Typography variant="h6">Loading...</Typography>;
+  }
+  const handleAddToCheckout = () => {
+    const itemsToCheckout = cartItems.map((item) => ({
+      _id: item.productId._id,
+      name: item.productId.name,
+      price: item.productId.price,
+      discount: item.productId.discount,
+      images: item.productId.images,
+      quantity: item.quantity,
+    }));
+    dispatch(ADD_TO_CHECKOUT(itemsToCheckout));
+    toast.success("Product added to checkout!", { autoClose: 3000 });
+    navigate("/checkout");
+  };
+
   return (
     <Container maxWidth="md">
-      <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
-        My Cart
-      </Typography>
-      <List>
-        {cartItems.map((item) => (
-          <React.Fragment key={item.id}>
-            <Cart item={item} setCartItems={setCartItems} />
-            <Divider />
-          </React.Fragment>
-        ))}
-      </List>
-      <Box
-        sx={{
-          mt: 4,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Typography variant="h6">Total: ${total.toFixed(2)}</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          onClick={() => navigate("/checkout")}
-        >
-          Checkout
-        </Button>
-      </Box>
+      {cartItems.length === 0 ? (
+        <Typography variant="h6" sx={{ textAlign: "center", my: 4 }}>
+          Your cart is empty.
+        </Typography>
+      ) : (
+        <>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
+            My Cart
+          </Typography>
+          <List>
+            {cartItems.map((item) => (
+              <React.Fragment key={item?._id}>
+                <Cart item={item} />
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+          <Box
+            sx={{
+              mt: 4,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h6">Total: ${totalPrice}</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={handleAddToCheckout}
+            >
+              Checkout
+            </Button>
+          </Box>
+        </>
+      )}
     </Container>
   );
 }

@@ -8,16 +8,23 @@ import {
   Grid,
   Paper,
 } from "@mui/material";
+import { useSelector } from "react-redux";
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "123-456-7890",
-    address: "123 Main St, Anytown, USA",
-  });
+  const {
+    firstName = "",
+    lastName = "",
+    email = "",
+    phone = "",
+    address = "",
+  } = useSelector((state) => ({
+    firstName: state.auth.user?.firstName || "",
+    lastName: state.auth.user?.lastName || "",
+    email: state.auth.user?.email || "",
+    phone: state.auth.user?.phone || "",
+    address: state.auth.user?.address || "",
+  }));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +55,7 @@ const ProfilePage = () => {
                 id="firstName"
                 label="First Name"
                 name="firstName"
-                value={userData.firstName}
+                value={firstName}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
@@ -59,7 +66,7 @@ const ProfilePage = () => {
                 id="lastName"
                 label="Last Name"
                 name="lastName"
-                value={userData.lastName}
+                value={lastName}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
@@ -70,7 +77,7 @@ const ProfilePage = () => {
                 id="email"
                 label="Email Address"
                 name="email"
-                value={userData.email}
+                value={email}
                 disabled
               />
             </Grid>
@@ -80,7 +87,7 @@ const ProfilePage = () => {
                 id="phone"
                 label="Phone Number"
                 name="phone"
-                value={userData.phone}
+                value={phone}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
@@ -91,7 +98,7 @@ const ProfilePage = () => {
                 id="address"
                 label="Address"
                 name="address"
-                value={userData.address}
+                value={address}
                 onChange={handleChange}
                 disabled={!isEditing}
               />

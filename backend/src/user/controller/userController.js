@@ -18,7 +18,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 // Create user
 const createUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
-
   if ([firstName, lastName, email, password].some((field) => !field?.trim())) {
     return res.status(400).json(new ApiError(400, "Please input all fields"));
   }
@@ -29,16 +28,12 @@ const createUser = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "User already exists, please login"));
   }
-
   const user = new User({ firstName, lastName, email, password });
   await user.save();
-
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     user._id
   );
-  const registeredUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const registeredUser = await User.findById(user._id).select("firstName lastName")
   const cookieOptions = { httpOnly: true, secure: false, sameSite: "Strict" };
 
   return res
@@ -71,9 +66,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     existUser._id
   );
-  const loggedInUser = await User.findById(existUser._id).select(
-    "-password -refreshToken"
-  );
+  const loggedInUser = await User.findById(existUser._id).select("firstName lastName")
   const cookieOptions = { httpOnly: true, secure: false, sameSite: "Strict" };
 
   return res
@@ -126,7 +119,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          user,
+          user: user,
           accessToken,
           refreshToken,
         },
