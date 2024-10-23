@@ -1,6 +1,3 @@
-
-
-
 # E-Commerce Project
 
 ## Table of Contents
@@ -15,19 +12,15 @@
 
 ## Project Description
 
-This is an e-commerce application built using Vite with React for the frontend and Express for the backend. The application has separate interfaces for users and admins. The frontend is split into two parts, one for users and one for admins. 
-
-- The user interface can be accessed at `localhost:3000`.
-- The admin interface can be accessed at `admin.localhost:3000`.
+This is an e-commerce application built using Vite with React for the frontend and Express for the backend. The application provide feature to make a order and track the order.
 
 The backend handles authentication using JWT for token generation and bcrypt for password hashing. The application includes login, logout, and signup functionalities.
 
 ## Features
 
-- User authentication (signup, login, logout)
+- User authentication (signup, login, logout, currentuser)
 - Password hashing using bcrypt
 - Token-based authentication using JWT
-- Separate interfaces for users and admins
 
 ## Technologies Used
 
@@ -41,6 +34,28 @@ The backend handles authentication using JWT for token generation and bcrypt for
 
 ## Setup and Installation
 
+### backend .env sample
+
+```sh
+PORT = "5000"
+ACCESS_TOKEN_SECRET = "YOUR SECRET TOKEN"
+ACCESS_TOKEN_EXPIRY= "1d"
+REFRESH_TOKEN_SECRET = "YOUR SECRET TOKEN"
+REFRESH_TOKEN_EXPIRY = "10d"
+MONGODB_URI = "YOUR MONGODB URL"
+allowedOrigin = "http://localhost:5173"
+CLOUDINARY_CLOUD_NAME = "YOUR CLOUDINARY UNIQUE NAME"
+CLOUDINARY_API_KEY = "YOUR CLOUDINARY API KEY"
+CLOUDINARY_API_SECRET = "YOUR CLOUDINARY API SECRET TOKEN"
+```
+
+### backend .env sample
+
+```sh
+VITE_REDUX_DEVTOOLS = development
+VITE_API_URL= "http://localhost:8000/api"
+```
+
 ### Prerequisites
 
 - Node.js (v14.x or later)
@@ -48,11 +63,15 @@ The backend handles authentication using JWT for token generation and bcrypt for
 ### Installation
 
 1. Clone the repository:
+
    ```sh
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/Mr-jas91/mern-e-com.git
+   cd mern-e-com
+
+   ```
 
 2. Install dependencies for both frontend and backend:
+
 - For the frontend:
 
 ```sh
@@ -60,37 +79,47 @@ cd frontend
 npm install
 
 ```
+
 - for backend
-```shcd backend
+
+```sh
+cd backend
 npm install
 ```
 
-## Running the Project
+## Run the Project
 
 1. Start the backend server:
+
 ```sh
 cd backend
 npm start
 ```
-The backend server will be running on http://localhost:5000.
 
 2. Start the frontend server:
 
 ```sh
 cd frontend
-npm start
+npm run dev
 ```
-The user interface will be running on http://localhost:3000.
+
+The user interface will be running on http://localhost:5173.
 
 ## Usage
+
 ### User Interface
-Visit http://localhost:3000 to access the user interface.
+
+Visit http://localhost:5173 to access the user interface.
 Users can sign up, log in, and log out using the provided functionalities.
-### Admin Interface
+
+<!-- ### Admin Interface
 Visit http://admin.localhost:3000 to access the admin interface.
-Admins can manage the e-commerce platform through this interface.
-### Contributors
+Admins can manage the e-commerce platform through this interface. -->
+
+### Project admin
+
 Jasvant maddheshiya
 
 ## License
+
 This project is licensed under the MIT License. See the LICENSE file for details.
