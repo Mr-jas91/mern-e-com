@@ -13,7 +13,7 @@ const ProductPage = lazy(() => import("./pages/ProductPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 // const SearchPage = lazy(() => import("./pages/SearchResultPage"));
-const WishlistPage = lazy(() => import("./pages/WishlistPage"));
+// const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const Navbar = lazy(() => import("./components/Navbar/Navbar"));
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import PrivateRoute from "./route/PrivateRoute";
@@ -97,12 +97,12 @@ function UserRoutes() {
               />
             }
           />
-          <Route
+          {/* <Route
             path="/wishlist"
             element={
               <PrivateRoute element={<WishlistPage />} redirectTo="/login" />
             }
-          />
+          /> */}
 
           {/* Fallback route */}
           <Route path="*" element={<PublicRoute element={<HomePage />} />} />
