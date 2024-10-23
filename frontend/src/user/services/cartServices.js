@@ -1,11 +1,11 @@
 import axios from "axios";
-const API_URI = "http://localhost:5000/api";
+const API_URL = import.meta.env.API_URL;
 
 const CartServices = {
   // Add product to cart
   addToCart: async (productId, accessToken) => {
     return await axios.post(
-      `${API_URI}/cart`,
+      `${API_URL}/cart`,
       { productId },
       {
         headers: {
@@ -17,7 +17,7 @@ const CartServices = {
 
   // Get cart details
   getCart: async (accessToken) => {
-    const res = await axios.get(`${API_URI}/cart`, {
+    const res = await axios.get(`${API_URL}/cart`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -29,7 +29,7 @@ const CartServices = {
   // Update quantity of product in cart
   updateCart: async (productId, action, accessToken) => {
     return await axios.put(
-      `${API_URI}/cart`,
+      `${API_URL}/cart`,
       { productId, action },
       {
         headers: {
@@ -41,7 +41,7 @@ const CartServices = {
 
   // Remove product from cart
   removeFromCart: async (productId, accessToken) => {
-    return await axios.delete(`${API_URI}/cart`, {
+    return await axios.delete(`${API_URL}/cart`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

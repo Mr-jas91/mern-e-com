@@ -12,7 +12,7 @@ const OrderHistoryPage = lazy(() => import("./pages/OrderHistoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const SearchPage = lazy(() => import("./pages/SearchResultPage"));
+// const SearchPage = lazy(() => import("./pages/SearchResultPage"));
 const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const Navbar = lazy(() => import("./components/Navbar/Navbar"));
 import OrderDetailsPage from "./pages/OrderDetailsPage";
