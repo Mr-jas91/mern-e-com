@@ -57,14 +57,14 @@ const Navbar = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="flex-none mx-4 relative">
+      {/* <div className="flex-none mx-4 relative">
         <input
           type="text"
           placeholder="Search..."
           className="input input-bordered w-full max-w-xs z-10"
           style={{ transition: "all 0.3s ease" }}
         />
-      </div>
+      </div> */}
 
       <div className="flex-none">
         {/* Cart Dropdown */}
