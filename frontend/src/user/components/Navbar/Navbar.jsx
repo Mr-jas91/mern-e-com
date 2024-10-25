@@ -52,7 +52,7 @@ const Navbar = () => {
     <div className="navbar bg-black">
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-xl bg-white">
-          daisyUI
+          Myshop918
         </Link>
       </div>
 
