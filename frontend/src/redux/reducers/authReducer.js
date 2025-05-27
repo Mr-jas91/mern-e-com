@@ -1,148 +1,125 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import AuthService from "../../user/services/authServices.js";
-
-// Register async thunk
-export const registerUser = createAsyncThunk(
-  "auth/register",
-  async (userData, { rejectWithValue }) => {
+import AuthService from "../../user/services/authServices";
+import {
+  AUTH_REGISTER,
+  AUTH_LOGIN,
+  AUTH_LOGOUT,
+  AUTH_GET_CURRENT_USER,
+  AUTH_GET_USER_PROFILE
+} from "../utils/actionTypes.js";
+// Reusable async thunk handler
+const createAsyncAction = (type, serviceFunction) => {
+  return createAsyncThunk(type, async (payload = null, { rejectWithValue }) => {
     try {
-      const response = await AuthService.register(userData);
+      const response = payload
+        ? await serviceFunction(payload)
+        : await serviceFunction();
+      // console.log(type, response);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error?.response?.data || error.message);
     }
-  }
+  });
+};
+
+// Define async actions
+export const registerUser = createAsyncAction(
+  AUTH_REGISTER,
+  AuthService.register
+);
+export const loginUser = createAsyncAction(AUTH_LOGIN, AuthService.login);
+
+// Logout User - Handled by AuthService
+export const logoutUser = createAsyncAction(AUTH_LOGOUT, AuthService.logout);
+
+// Get Current User - Handled by AuthService
+export const getCurrentUser = createAsyncAction(
+  AUTH_GET_CURRENT_USER,
+  AuthService.getCurrentUser
 );
 
-// Login async thunk
-export const loginUser = createAsyncThunk(
-  "auth/login",
-  async (loginData, { rejectWithValue }) => {
-    try {
-      const response = await AuthService.login(loginData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
+// get user profile
+export const getUserProfile = createAsyncAction(
+  AUTH_GET_USER_PROFILE,
+  AuthService.getUserProfile
 );
 
-// Logout async thunk
-export const logoutUser = createAsyncThunk(
-  "auth/logout",
-  async (accessToken, { rejectWithValue }) => {
-    try {
-      return await AuthService.logout(accessToken);
-    } catch (error) {
-      return rejectWithValue(error);
-    }
-  }
+// Update user profile
+export const updateUserProfile = createAsyncAction(
+  "AUTH_UPDATE_USER_PROFILE",
+  AuthService.updateUserProfile
 );
 
-// Get current user async thunk
-export const getCurrentUser = createAsyncThunk(
-  "auth/getCurrentUser",
-  async (accessToken, { rejectWithValue }) => {
-    try {
-      const response = await AuthService.getCurrentUser(accessToken);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
+// Utility functions for state transitions
+const setLoadingState = (state) => {
+  state.loading = true;
+  state.error = null;
+  state.success = false;
+};
 
-// Slice for authentication
+const setErrorState = (state, action) => {
+  state.loading = false;
+  state.error = action.payload || "Something went wrong";
+  state.success = false;
+};
+
+const setSuccessState = (state, action) => {
+  const userData =
+    action.payload?.data?.user || action.payload?.user || action.payload;
+  state.loading = false;
+  state.user = userData;
+  state.success = true;
+  state.error = null;
+};
+
+const resetState = (state) => {
+  state.loading = false;
+  state.user = null;
+  state.success = false;
+  state.error = null;
+};
+
+// Initial state
+const initialState = {
+  user: null,
+  loading: false,
+  success: false,
+  error: null
+};
+
+// Authentication slice
 const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    user: null,
-    accessToken: null,
-    loading: false,
-    error: null,
-    success: false
-  },
-  reducers: {
-    addUser: (state, action) => {}
-  },
+  initialState,
+  reducers: {},
   extraReducers: (builder) => {
-    // Register reducer
     builder
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.data.user;
-        state.accessToken = action.payload.data.accessToken;
-        localStorage.setItem("accessToken", action.payload.data.accessToken);
-        state.success = true;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.success = false;
-      });
+      .addCase(registerUser.pending, setLoadingState)
+      .addCase(registerUser.fulfilled, setSuccessState)
+      .addCase(registerUser.rejected, setErrorState);
 
-    // Login reducer
     builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.data.user;
-        state.accessToken = action.payload.data.accessToken;
-        localStorage.setItem("accessToken", action.payload.data.accessToken);
-        state.success = true;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.success = false;
-      });
+      .addCase(loginUser.pending, setLoadingState)
+      .addCase(loginUser.fulfilled, setSuccessState)
+      .addCase(loginUser.rejected, setErrorState);
 
-    // Logout reducer
     builder
-      .addCase(logoutUser.pending, (state) => {
-        state.loading = true;
-        state.success = false;
-      })
-      .addCase(logoutUser.fulfilled, (state) => {
-        state.loading = false;
-        state.user = null;
-        state.accessToken = null;
-        localStorage.removeItem("accessToken");
-        state.success = true;
-      })
-      .addCase(logoutUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload.data.message;
-        state.success = false;
-      });
+      .addCase(logoutUser.pending, setLoadingState)
+      .addCase(logoutUser.fulfilled, resetState)
+      .addCase(logoutUser.rejected, setErrorState);
 
-    // Get current user reducer
     builder
-      .addCase(getCurrentUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-      .addCase(getCurrentUser.fulfilled, (state, action) => {
-        state.accessToken = action.payload.data.accessToken;
-        state.user = action.payload.data.user;
-        state.success = true;
-        state.loading = false;
-      })
-      .addCase(getCurrentUser.rejected, (state, action) => {
-        state.error = action.payload;
-        state.success = false;
-        state.loading = false;
-      });
+      .addCase(getCurrentUser.pending, setLoadingState)
+      .addCase(getCurrentUser.fulfilled, setSuccessState)
+      .addCase(getCurrentUser.rejected, setErrorState);
+    builder.addCase(getUserProfile.pending, setLoadingState);
+    builder
+      .addCase(getUserProfile.fulfilled, setSuccessState)
+      .addCase(getUserProfile.rejected, setErrorState);
+    builder
+      .addCase(updateUserProfile.pending, setLoadingState)
+      .addCase(updateUserProfile.fulfilled, setSuccessState)
+      .addCase(updateUserProfile.rejected, setErrorState);
   }
 });
 

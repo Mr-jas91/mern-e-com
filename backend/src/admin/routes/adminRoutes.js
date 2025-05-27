@@ -8,13 +8,13 @@ import {
   loginUser,
   logoutUser,
   getCurrentUser,
-  getAdminProfile,
+  getAdminProfile
 } from "../controller/adminController.js";
 
 // Category controller
 import {
   createCategory,
-  getCategory,
+  getCategory
 } from "../controller/categoryController.js";
 
 // Dashboard controller
@@ -22,14 +22,15 @@ import { getAdminDashboardData } from "../controller/dashboardController.js";
 
 // Inventory controller
 import {
-  getProductStock, updateInventory
+  getProductStock,
+  updateInventory
 } from "../controller/inventryController.js";
 
 // Order controller
 import {
   getOrders,
   getOrderDetails,
-  updateDeliveryStatus,
+  updateDeliveryStatus
 } from "../controller/orderController.js";
 
 // Product controller
@@ -38,17 +39,20 @@ import {
   getProducts,
   getProductDetails,
   updateProductDetails,
-  deleteProduct,
+  deleteProduct
 } from "../controller/productController.js";
 
 // Review controller
 import {
   getReviewsByProduct,
-  deleteReview,
+  deleteReview
 } from "../controller/reviewController.js";
 
 // User controller
-import { getAllUsers, getActiveUsersCount } from "../controller/userController.js";
+import {
+  getAllUsers,
+  getActiveUsersCount
+} from "../controller/userController.js";
 
 // Create router
 const router = express.Router();

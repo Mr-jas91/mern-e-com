@@ -9,6 +9,8 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Box,
+  Button
 } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -16,36 +18,31 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
-import { getOrderDetails } from "../../redux/reducers/orderReducer";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  getOrderDetails,
+  cancelOrder
+} from "../../redux/reducers/orderReducer"; // Import cancelOrder action
+import Loader from "../../shared/Loader/Loader";
 
 const OrderDetailsPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { orderDetails, loading } = useSelector((state) => state.orders);
-  const { accessToken } = useSelector((state) => state.auth);
-  const [productList, setProductList] = useState({});
-  const { productid } = useParams();
+  const { id } = useParams();
+  const [isCancelling, setIsCancelling] = useState(false); // Track cancellation state
 
   useEffect(() => {
-    if (orderDetails?.length > 0) {
-      setProductList(
-        orderDetails[0]?.orderItems.find(
-          (order) => order?.productId?._id === productid
-        )
-      );
-    } else {
-      dispatch(getOrderDetails(accessToken));
-    }
-  }, [orderDetails, dispatch, accessToken, productid]);
+    dispatch(getOrderDetails(id));
+  }, [dispatch, id]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <Loader />;
+  if (!orderDetails || !orderDetails.orderItems?.length)
+    return <Typography>No order details available</Typography>;
 
-  if (!productList || !orderDetails?.length) {
-    return <div>No order details available</div>;
-  }
-
+  const orderItem = orderDetails.orderItems[0];
+  const product = orderItem?.productId;
+  const deliveryStatus = orderItem?.deliveryStatus;
   const deliverySteps = ["Ordered", "Shipped", "Out for Delivery", "Delivered"];
 
   const getStepIndex = (status) => {
@@ -63,124 +60,204 @@ const OrderDetailsPage = () => {
     }
   };
 
-  const currentStep = getStepIndex(productList?.deliveryStatus);
+  const currentStep = getStepIndex(deliveryStatus);
+
+  const statusColors = {
+    PENDING: "orange",
+    SHIPPED: "blue",
+    "OUT FOR DELIVERY": "purple",
+    DELIVERED: "green"
+  };
+
+  const goToProductPage = () => {
+    if (product?._id) {
+      navigate(`/product/${product._id}`);
+    }
+  };
+
+  // Handle order cancellation
+  const handleCancelOrder = async () => {
+    setIsCancelling(true);
+    await dispatch(cancelOrder(id));
+    setIsCancelling(false);
+    navigate(`/order/${id}/details`);
+  };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4">
-      <div className="max-w-4xl mx-auto">
-        <Typography
-          variant="h4"
-          className="font-bold text-center text-black mb-6"
-        >
-          Order Details
-        </Typography>
+    <Box sx={{ maxWidth: 900, mx: "auto", py: 4 }}>
+      <Typography variant="h4" fontWeight="bold" textAlign="center" mb={4}>
+        Order Details
+      </Typography>
 
-        <Card className="shadow-lg">
-          <CardContent>
-            <Grid container spacing={4}>
-              <Grid
-                item
-                xs={12}
-                sm={4}
-                className="flex justify-center items-center"
-              >
+      <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+        <CardContent>
+          <Grid
+            container
+            spacing={4}
+            onClick={goToProductPage}
+            sx={{ cursor: "pointer" }}
+          >
+            <Grid item xs={12} sm={4} display="flex" justifyContent="center">
+              {product?.images?.length > 0 && (
                 <img
-                  src={productList?.productId?.images[0]}
-                  alt={productList?.productId?.name}
-                  className="w-full h-auto object-cover rounded-lg shadow-md"
+                  src={product.images[0]}
+                  alt={product.name}
+                  style={{
+                    width: "100%",
+                    maxHeight: 250,
+                    objectFit: "cover",
+                    borderRadius: "8px"
+                  }}
                 />
-              </Grid>
+              )}
+            </Grid>
 
-              <Grid item xs={12} sm={8}>
-                <Typography variant="h6" className="font-semibold">
-                  {productList?.productId?.name}
-                </Typography>
+            <Grid item xs={12} sm={8}>
+              <Typography variant="h6" fontWeight="bold">
+                Order ID: {orderItem?._id}
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {product?.name || "Product Name Unavailable"}
+              </Typography>
+
+              <Box display="flex" alignItems="center" gap={2} mt={1}>
                 <Typography
                   variant="h6"
-                  className="text-black text-xl font-bold mt-2"
+                  sx={{
+                    color: product?.discount ? "gray" : "primary.main",
+                    textDecoration: product?.discount ? "line-through" : "none",
+                    fontWeight: product?.discount ? "normal" : "bold"
+                  }}
                 >
-                  {`₹${productList?.productId?.price}`}
+                  ${product?.price ? product.price.toFixed(2) : "N/A"}
                 </Typography>
 
-                <Divider className="my-4" />
+                {product?.discount && (
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "green", fontWeight: "bold" }}
+                  >
+                    $
+                    {product?.price && product?.discount
+                      ? (product.price - product.discount).toFixed(2)
+                      : "N/A"}
+                  </Typography>
+                )}
+              </Box>
 
-                <div className="mb-4">
-                  <Typography variant="body1" className="font-semibold mb-1">
-                    Order Status
-                  </Typography>
-                  <Chip
-                    label={productList?.deliveryStatus}
-                    color={
-                      productList?.deliveryStatus === "DELIVERED"
-                        ? "success"
-                        : "primary"
-                    }
-                    icon={<LocalShippingIcon />}
-                  />
-                </div>
+              <Divider sx={{ my: 2 }} />
 
-                <div className="mb-4">
-                  <Typography variant="body1" className="font-semibold mb-1">
-                    Delivery Progress
-                  </Typography>
-                  <Stepper activeStep={currentStep} alternativeLabel>
-                    {deliverySteps.map((label, index) => (
-                      <Step key={label}>
-                        <StepLabel
-                          icon={
-                            index === 0 ? (
-                              <ShoppingCartIcon />
-                            ) : index === 1 ? (
-                              <LocalShippingIcon />
-                            ) : index === 2 ? (
-                              <DeliveryDiningIcon />
-                            ) : (
-                              <CheckCircleIcon />
-                            )
-                          }
-                        >
-                          {label}
-                        </StepLabel>
-                      </Step>
-                    ))}
-                  </Stepper>
-                </div>
+              <Typography variant="subtitle1" fontWeight="bold">
+                Order Status:
+              </Typography>
+              <Chip
+                label={deliveryStatus}
+                sx={{
+                  mt: 1,
+                  fontSize: "1rem",
+                  p: 1,
+                  color: "#fff",
+                  backgroundColor: statusColors[deliveryStatus] || "gray"
+                }}
+                icon={<LocalShippingIcon />}
+              />
 
-                <div className="mb-4">
-                  <Typography variant="body1" className="font-semibold mb-1">
-                    Shipping Address
-                  </Typography>
-                  <Typography variant="body2" className="text-gray-600">
-                    {`Address: ${orderDetails[0]?.shippingAddress?.address}, City: ${orderDetails[0]?.shippingAddress?.city},
-                    Pincode: ${orderDetails[0]?.shippingAddress?.pincode}, State: ${orderDetails[0]?.shippingAddress?.state}, Mobile: ${orderDetails[0]?.shippingAddress?.mobileNo}`}
-                  </Typography>
-                </div>
+              <Typography variant="subtitle1" fontWeight="bold" mt={3}>
+                Delivery Progress:
+              </Typography>
+              <Stepper activeStep={currentStep} alternativeLabel sx={{ mt: 1 }}>
+                {deliverySteps.map((label, index) => (
+                  <Step key={label}>
+                    <StepLabel
+                      StepIconComponent={() => {
+                        const IconComponent =
+                          index === 0
+                            ? ShoppingCartIcon
+                            : index === 1
+                            ? LocalShippingIcon
+                            : index === 2
+                            ? DeliveryDiningIcon
+                            : CheckCircleIcon;
 
-                <div>
-                  <Typography variant="body1" className="font-semibold mb-1">
-                    Payment Method
-                  </Typography>
-                  <Chip
-                    label={orderDetails[0]?.paymentMethod}
-                    color="info"
-                    icon={<PaymentIcon />}
-                    className="mr-2"
-                  />
-                  <Chip
-                    label={orderDetails[0]?.paymentStatus}
-                    color={
-                      orderDetails[0]?.paymentStatus === "PAID"
-                        ? "success"
-                        : "warning"
-                    }
-                  />
-                </div>
-              </Grid>
+                        return (
+                          <IconComponent
+                            style={{
+                              color:
+                                index <= currentStep
+                                  ? statusColors[deliveryStatus]
+                                  : "gray",
+                              fontSize: "2rem"
+                            }}
+                          />
+                        );
+                      }}
+                    >
+                      {label}
+                    </StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+
+              {/* Cancel Order Button */}
+              {deliveryStatus !== "DELIVERED" &&
+                deliveryStatus !== "CANCELLED" && (
+                  <Button
+                    type="button"
+                    variant="contained"
+                    color="error"
+                    sx={{ mt: 3 }}
+                    onClick={handleCancelOrder}
+                    disabled={isCancelling}
+                  >
+                    {isCancelling ? "Cancelling..." : "Cancel Order"}
+                  </Button>
+                )}
             </Grid>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ boxShadow: 3, borderRadius: 2, mt: 3 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold">
+            Shipping Address
+          </Typography>
+          <Typography variant="body1" color="text.secondary" mt={1}>
+            {orderDetails?.shippingAddress?.fullName}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {orderDetails?.shippingAddress?.address || "Address not available"}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {orderDetails?.shippingAddress?.city},{" "}
+            {orderDetails?.shippingAddress?.state},{" "}
+            {orderDetails?.shippingAddress?.pincode}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Mobile: {orderDetails?.shippingAddress?.mobileNo}
+          </Typography>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="h6" fontWeight="bold">
+            Payment Details
+          </Typography>
+          <Box mt={1} display="flex" alignItems="center" gap={2}>
+            <Chip
+              label={orderDetails?.paymentMethod || "N/A"}
+              color="info"
+              icon={<PaymentIcon />}
+            />
+            <Chip
+              label={orderDetails?.paymentStatus || "N/A"}
+              color={
+                orderDetails?.paymentStatus === "PAID" ? "success" : "warning"
+              }
+            />
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

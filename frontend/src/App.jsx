@@ -1,10 +1,13 @@
 import React from "react";
 import UserRoutes from "./user/UserRoutes";
+import AdminRoutes from "./admin/AdminRoutes";
 
 function App() {
+  const subdomain = window.location.hostname.split(".")[0];
+
   return (
     <>
-      <UserRoutes />
+      {subdomain === "admin" ? <AdminRoutes /> : <UserRoutes />}
     </>
   );
 }

@@ -1,36 +1,24 @@
-import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../shared/interceptor";
 
+const createOrder = async (orderData) => {
+  return await api.post("/createorder", orderData);
+};
+
+const getMyOrders = async () => {
+  return await api.get("/myorders");
+};
+
+const getOrderDetails = async (orderId) => {
+  return await api.get(`/myorder/${orderId}`);
+};
+const cancelOrder = async (orderId) => {
+  return await api.put(`/myorder/${orderId}`);
+};
 const orderServices = {
-  createOrder: async (orderItems, shippingAddress, orderPrice, accessToken) => {
-    return await axios.post(
-      `${API_URL}/createorder`,
-      {
-        orderItems,
-        shippingAddress,
-        orderPrice
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    );
-  },
-  getUserOrderHistory: async (accessToken) => {
-    return await axios.get(`${API_URL}/myorders`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-  },
-  getOrderDetails: async (orderId, accessToken) => {
-    return await axios.get(`${API_URL}/myorder/${orderId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-  }
+  createOrder,
+  getMyOrders,
+  getOrderDetails,
+  cancelOrder
 };
 
 export default orderServices;

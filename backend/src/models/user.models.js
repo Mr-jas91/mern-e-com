@@ -6,52 +6,55 @@ const userSchema = new Schema(
     firstName: {
       type: String,
       required: true,
-      lowercase: true,
+      lowercase: true
     },
     lastName: {
       type: String,
       required: true,
-      lowercase: true,
+      lowercase: true
     },
     email: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
+      lowercase: true
     },
     password: {
       type: String,
-      required: [true, "Password required"], // Corrected the typo
+      required: [true, "Password required"] // Corrected the typo
     },
     isActive: {
       type: Boolean,
-      default: false,
+      default: false
     },
     address: {
-      type: String,
+      type: String
+    },
+    phone: {
+      type: String
     },
     cart: [
       {
         product: {
           type: Schema.Types.ObjectId,
-          ref: "Product",
+          ref: "Product"
         },
         quantity: {
           type: Number,
           required: true,
-          default: 1,
-        },
-      },
+          default: 1
+        }
+      }
     ],
     orderHistory: [
       {
         type: Schema.Types.ObjectId,
-        ref: "Order",
-      },
+        ref: "Order"
+      }
     ],
     refreshToken: {
-      type: String,
-    },
+      type: String
+    }
   },
   { timestamps: true }
 );
@@ -72,22 +75,22 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
-      fullName: `${this.firstName} ${this.lastName}`,
+      fullName: `${this.firstName} ${this.lastName}`
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     }
   );
 };
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
-      _id: this._id,
+      _id: this._id
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     }
   );
 };

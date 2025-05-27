@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardMedia,
@@ -8,24 +8,27 @@ import {
   Box,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import {
-  addToCart,
-} from "../../../redux/reducers/cartReducer.js";
 import { useDispatch, useSelector } from "react-redux";
+import { addToCart } from "../../../redux/reducers/cartReducer.js";
 
-
-// Product Card Component
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { accessToken } = useSelector((state) => state.auth);
-  
+  const { user } = useSelector((state) => state.auth);
+  const [added, setAdded] = useState(false);
+
   const handleAddToCart = (event) => {
     event.stopPropagation();
-    dispatch(addToCart({ productId: product._id, accessToken }));
-  };
+    if (!user) {
+      navigate("/user/signin");
+    } else {
+      dispatch(addToCart(product._id));
+      setAdded(true);
 
-  
+      // Reset the "Added" state after 3 seconds
+      setTimeout(() => setAdded(false), 1500);
+    }
+  };
 
   return (
     <Card
@@ -33,71 +36,86 @@ const ProductCard = ({ product }) => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between", // Distribute sections evenly
-        alignItems: "center",
-        padding: "16px", // Add padding to avoid overflow
+        justifyContent: "space-between",
+        padding: 2,
+        borderRadius: 2,
+        boxShadow: 3,
+        transition: "transform 0.2s ease-in-out",
+        "&:hover": { transform: "scale(1.02)" },
       }}
-      onClick={() => navigate(`/products/${product._id}`)}
+      onClick={() => navigate(`/product/${product._id}`)}
     >
       {/* Image Section */}
       <Box
         sx={{
-          width: "100%", // Full width of the card
-          height: "200px", // Fixed height for image section
+          width: "100%",
+          height: 220,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          marginBottom: "16px",
+          backgroundColor: "#f9f9f9",
+          borderRadius: 2,
+          overflow: "hidden",
         }}
       >
         <CardMedia
           component="img"
-          image={product?.images[0]}
-          alt={product?.name}
+          image={product?.images?.[0] || "/placeholder.jpg"}
+          alt={product?.name || "Product Image"}
           sx={{
             maxWidth: "100%",
             maxHeight: "100%",
-            objectFit: "contain",
-            objectPosition: "center",
+            objectFit: "cover",
+            transition: "opacity 0.3s ease-in-out",
+            "&:hover": { opacity: 0.9 },
           }}
         />
       </Box>
 
-      {/* Product Name Section */}
-      <CardContent sx={{ textAlign: "center", padding: 0 }}>
-        <Typography gutterBottom variant="h6" component="div">
-          {product?.name}
+      {/* Product Info */}
+      <CardContent sx={{ textAlign: "center", paddingBottom: "8px" }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            fontSize: "1rem",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {product?.name || "Product Name"}
         </Typography>
       </CardContent>
 
       {/* Price Section */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-start",
-          width: "100%",
-          marginBottom: "16px",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          ${product?.price.toFixed(2)}
+      <Box sx={{ display: "flex", justifyContent: "center", gap: 1, mb: 1 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ textDecoration: "line-through" }}
+        >
+          ${product?.price?.toFixed(2) || "0.00"}
+        </Typography>
+        <Typography variant="body2" color="primary" fontWeight={600}>
+          ${(product?.price - (product?.discount || 0)).toFixed(2)}
         </Typography>
       </Box>
 
-      {/* Add to Cart Button Section */}
+      {/* Add to Cart Button */}
       <Button
-        size="small"
+        variant="contained"
         sx={{
-          bgcolor: "black",
-          color: "white",
-          "&:hover": {
-            bgcolor: "#424242",
-          },
           width: "100%",
+          bgcolor: added ? "#4caf50" : "black",
+          color: "white",
+          fontWeight: "bold",
+          "&:hover": { bgcolor: added ? "#66bb6a" : "#424242" },
+          transition: "background 0.3s ease-in-out",
         }}
         onClick={handleAddToCart}
       >
-        Add to Cart
+        {added ? "Added!" : "Add to Cart"}
       </Button>
     </Card>
   );

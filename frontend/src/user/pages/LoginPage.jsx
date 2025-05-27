@@ -6,9 +6,9 @@ import {
   TextField,
   Button,
   Box,
-  Grid,
+  Grid
 } from "@mui/material";
-import { ToastContainer, toast } from "react-toastify";
+import showToast from "../../shared/toastMsg/showToast"
 import { loginUser } from "../../redux/reducers/authReducer.js";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -16,10 +16,10 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, loading, error } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
+    password: ""
   });
 
   // Handle form input changes
@@ -27,7 +27,7 @@ const LoginPage = () => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value,
+      [name]: value
     }));
   };
 
@@ -37,32 +37,23 @@ const LoginPage = () => {
     try {
       const res = await dispatch(loginUser(formData));
       if (res.payload.success) {
-        toast.success("Successfully logged in!", {
-          autoClose: 5000,
-          position: "top-center",
-        });
+        showToast("success", "Successfully logged in!");
         setFormData({
           email: "",
-          password: "",
+          password: ""
         });
-        navigate("/");
+        navigate("/home");
       } else {
-        toast.error(res.payload.data, {
-          autoClose: 5000,
-          position: "top-center",
-        });
+        showToast("error", res.payload?.data);
       }
     } catch (error) {
-      toast.error(error.message, {
-        autoClose: 5000,
-        position: "top-center",
-      });
+      showToast("error", error?.message);
     }
   };
 
   // Redirect to register page
   const handleRegisterRedirect = () => {
-    navigate("/register");
+    navigate("/user/register");
   };
 
   return (
@@ -114,7 +105,6 @@ const LoginPage = () => {
           </Button>
         </Box>
       </Paper>
-     
     </Container>
   );
 };

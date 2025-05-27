@@ -1,6 +1,10 @@
 import React, { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-// import PublicRoute from "./route/PublicRoute";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -12,20 +16,19 @@ const OrderHistoryPage = lazy(() => import("./pages/OrderHistoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-// const SearchPage = lazy(() => import("./pages/SearchResultPage"));
-// const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const Navbar = lazy(() => import("./components/Navbar/Navbar"));
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import PrivateRoute from "./route/PrivateRoute";
 import PublicRoute from "./route/PublicRoute";
+import Loader from "../shared/Loader/Loader";
 function UserRoutes() {
   return (
     <Router>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<Loader />}>
         <Navbar />
         <ToastContainer
-          position="top-center"
-          autoClose={5000}
+          position="bottom-right"
+          autoClose={2000}
           hideProgressBar={false}
           closeOnClick
           draggable
@@ -34,78 +37,81 @@ function UserRoutes() {
         />
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<PublicRoute element={<HomePage />} />} />
           <Route
-            path="/products/:id"
+            path="/home"
+            element={<PublicRoute element={<HomePage />} />}
+          />
+          <Route
+            path="/product/:id"
             element={<PublicRoute element={<ProductPage />} />}
           />
           <Route
-            path="/login"
+            path="/user/signin"
             element={
               <PublicRoute
                 element={<LoginPage />}
                 restricted={true}
-                redirectTo="/"
+                redirectTo="/home"
               />
             }
           />
           <Route
-            path="/register"
+            path="/user/register"
             element={
               <PublicRoute
                 element={<RegisterPage />}
                 restricted={true}
-                redirectTo="/"
+                redirectTo="/home"
               />
             }
           />
 
           {/* Private routes */}
           <Route
-            path="/profile"
+            path="/user/account"
             element={
-              <PrivateRoute element={<ProfilePage />} redirectTo="/login" />
+              <PrivateRoute
+                element={<ProfilePage />}
+                redirectTo="/user/signin"
+              />
             }
           />
           <Route
-            path="/mycart"
+            path="/cart"
             element={
-              <PrivateRoute element={<CartPage />} redirectTo="/login" />
+              <PrivateRoute element={<CartPage />} redirectTo="/user/signin" />
             }
           />
           <Route
             path="/checkout"
             element={
-              <PrivateRoute element={<CheckoutPage />} redirectTo="/login" />
+              <PrivateRoute
+                element={<CheckoutPage />}
+                redirectTo="/user/signin"
+              />
             }
           />
           <Route
-            path="/myorders"
+            path="/orders"
             element={
               <PrivateRoute
                 element={<OrderHistoryPage />}
-                redirectTo="/login"
+                redirectTo="/user/signin"
               />
             }
           />
           <Route
-            path="/myorder/:id/:productid"
+            path="/order/:id/details"
             element={
               <PrivateRoute
                 element={<OrderDetailsPage />}
-                redirectTo="/login"
+                redirectTo="/user/signin"
               />
             }
           />
-          {/* <Route
-            path="/wishlist"
-            element={
-              <PrivateRoute element={<WishlistPage />} redirectTo="/login" />
-            }
-          /> */}
 
           {/* Fallback route */}
-          <Route path="*" element={<PublicRoute element={<HomePage />} />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
     </Router>

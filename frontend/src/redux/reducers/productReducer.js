@@ -1,132 +1,100 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import ProductServices from "../../user/services/productServices.js";
+import {
+  fetchAllProducts as fetchProducts,
+  fetchProduct,
+  fetchByCategory
+} from "../utils/actionTypes.js";
 
-// Get all products
-export const fetchAllProducts = createAsyncThunk(
-  "products/fetchAll",
-  async (_, { rejectWithValue }) => {
+// Reusable async action creator
+const createAsyncAction = (type, serviceMethod) => {
+  return createAsyncThunk(type, async (arg, { rejectWithValue }) => {
     try {
-      const response = await ProductServices.getAllProducts();
+      const response = await serviceMethod(arg);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
-  }
+  });
+};
+
+// Define async actions
+export const fetchAllProducts = createAsyncAction(
+  fetchProducts,
+  ProductServices.getAllProducts
 );
 
-// Get product by ID
-export const fetchProductById = createAsyncThunk(
-  "products/fetchById",
-  async (productId, { rejectWithValue }) => {
-    try {
-      const response = await ProductServices.getProductById(productId);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
+export const fetchProductById = createAsyncAction(
+  fetchProduct,
+  ProductServices.getProductById
 );
 
-// Get products by category
-export const fetchProductsByCategory = createAsyncThunk(
-  "products/fetchByCategory",
-  async (category, { rejectWithValue }) => {
-    try {
-      const response = await ProductServices.getProductByCategory(category);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
+export const fetchProductsByCategory = createAsyncAction(
+  fetchByCategory,
+  ProductServices.getProductByCategory
 );
 
-// Get all categories
-export const fetchCategories = createAsyncThunk(
+export const fetchCategories = createAsyncAction(
   "products/fetchCategories",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await ProductServices.getCategory();
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
+  ProductServices.getCategory
 );
 
 // Initial state
 const initialState = {
   products: [],
+  singleProduct: null,
   categories: [],
   loading: false,
-  error: null,
+  error: null
 };
 
-// Create product slice
+// Centralized state handlers
+const handlePending = (state) => {
+  state.loading = true;
+  state.error = null;
+};
+
+const handleFulfilled = (state, action, key) => {
+  state.loading = false;
+  state[key] = action.payload?.data || action.payload;
+};
+
+const handleRejected = (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+};
+
+// Create slice with reusable reducers
 const productSlice = createSlice({
   name: "products",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    // Handle fetchAllProducts
     builder
-      .addCase(fetchAllProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchAllProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = action.payload?.data;
-      })
-      .addCase(fetchAllProducts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+      .addCase(fetchAllProducts.pending, handlePending)
+      .addCase(fetchAllProducts.fulfilled, (state, action) =>
+        handleFulfilled(state, action, "products")
+      )
+      .addCase(fetchAllProducts.rejected, handleRejected)
 
-    // Handle fetchProductById
-    builder
-      .addCase(fetchProductById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = [action.payload?.data];
-      })
-      .addCase(fetchProductById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+      .addCase(fetchProductById.pending, handlePending)
+      .addCase(fetchProductById.fulfilled, (state, action) =>
+        handleFulfilled(state, action, "singleProduct")
+      )
+      .addCase(fetchProductById.rejected, handleRejected)
 
-    // Handle fetchProductsByCategory
-    builder
-      .addCase(fetchProductsByCategory.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductsByCategory.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = action.payload;
-      })
-      .addCase(fetchProductsByCategory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+      .addCase(fetchProductsByCategory.pending, handlePending)
+      .addCase(fetchProductsByCategory.fulfilled, (state, action) =>
+        handleFulfilled(state, action, "products")
+      )
+      .addCase(fetchProductsByCategory.rejected, handleRejected)
 
-    // Handle fetchCategories
-    builder
-      .addCase(fetchCategories.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchCategories.fulfilled, (state, action) => {
-        state.loading = false;
-        state.categories = action.payload;
-      })
-      .addCase(fetchCategories.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-  },
+      .addCase(fetchCategories.pending, handlePending)
+      .addCase(fetchCategories.fulfilled, (state, action) =>
+        handleFulfilled(state, action, "categories")
+      )
+      .addCase(fetchCategories.rejected, handleRejected);
+  }
 });
 
 export default productSlice.reducer;

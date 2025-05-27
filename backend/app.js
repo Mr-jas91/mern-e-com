@@ -7,11 +7,17 @@ import { config } from "dotenv";
 config({
   path: "./.env"
 });
-const allowedOrigin = process.env.allowedOrigin;
+const allowedOrigin = process.env.allowedOrigins;
 const app = express();
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      if ((!origin, allowedOrigin.includes(origin))) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true
   })
 );

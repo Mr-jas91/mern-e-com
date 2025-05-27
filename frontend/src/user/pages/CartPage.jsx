@@ -7,79 +7,120 @@ import {
   Button,
   Box,
   Divider,
+  Grid,
+  Paper
 } from "@mui/material";
-import Cart from "../components/Cart/Cart";
 import { useDispatch, useSelector } from "react-redux";
+import Cart from "../components/Cart/Cart";
 import { getCart } from "../../redux/reducers/cartReducer";
 import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer";
-import { toast } from "react-toastify";
 
 export default function CartPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { accessToken } = useSelector((state) => state.auth);
-  const { cartItems, totalPrice, loading } = useSelector((state) => state.cart);
+  const { cartItems } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
 
+  const totalPrice = cartItems.items.reduce(
+    (sum, item) => sum + item?.productId?.price * item?.quantity,
+    0
+  );
+  const discount = cartItems.items.reduce(
+    (sum, item) => sum + item?.productId?.discount * item?.quantity,
+    0
+  );
+  const finalPrice = totalPrice - discount;
+
+  // Fetch cart details when the page loads (on refresh)
   useEffect(() => {
-    dispatch(getCart(accessToken));
-  }, [dispatch, accessToken]);
+    if (user) {
+      dispatch(getCart());
+    }
+  }, [dispatch, user]);
 
-  if (loading) {
-    return <Typography variant="h6">Loading...</Typography>;
-  }
-  const handleAddToCheckout = () => {
-    const itemsToCheckout = cartItems.map((item) => ({
-      _id: item.productId._id,
-      name: item.productId.name,
-      price: item.productId.price,
-      discount: item.productId.discount,
-      images: item.productId.images,
-      quantity: item.quantity,
-    }));
-    dispatch(ADD_TO_CHECKOUT(itemsToCheckout));
-    toast.success("Product added to checkout!", { autoClose: 3000 });
-    navigate("/checkout");
+  // Handle checkout process
+  const handleCheckout = () => {
+    if (user) {
+      dispatch(ADD_TO_CHECKOUT(cartItems?.items));
+      navigate("/checkout");
+    } else {
+      navigate("/user/signin");
+    }
   };
+
+  // Show empty cart message
+  if (!cartItems?.items?.length) {
+    return (
+      <Container maxWidth="md" sx={{ textAlign: "center", mt: 4 }}>
+        <Typography variant="h6">Your cart is empty.</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md">
-      {cartItems.length === 0 ? (
-        <Typography variant="h6" sx={{ textAlign: "center", my: 4 }}>
-          Your cart is empty.
-        </Typography>
-      ) : (
-        <>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
-            My Cart
-          </Typography>
-          <List>
-            {cartItems.map((item) => (
-              <React.Fragment key={item?._id}>
-                <Cart item={item} />
-                <Divider />
-              </React.Fragment>
-            ))}
-          </List>
-          <Box
-            sx={{
-              mt: 4,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
+      <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
+        Shopping Cart
+      </Typography>
+
+      {/* Cart Items List */}
+      <List>
+        {cartItems?.items?.map((item) => (
+          <React.Fragment key={item._id}>
+            <Cart item={item} />
+            <Divider />
+          </React.Fragment>
+        ))}
+      </List>
+
+      {/* Price Summary & Checkout */}
+      <Grid container spacing={3} sx={{ mt: 4 }}>
+        {/* Price Summary */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Order Summary
+            </Typography>
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="body1">Total Price:</Typography>
+              <Typography
+                variant="body1"
+                sx={{ textDecoration: "line-through", color: "text.secondary" }}
+              >
+                ${totalPrice.toFixed(2)}
+              </Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" mt={1}>
+              <Typography variant="body1">Discount:</Typography>
+              <Typography variant="body1" color="error">
+                - ${discount.toFixed(2)}
+              </Typography>
+            </Box>
+            <Divider sx={{ my: 2 }} />
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="h6" fontWeight="bold">
+                Final Price:
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                ${finalPrice.toFixed(2)}
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Checkout Button */}
+        <Grid item xs={12} md={6} display="flex" alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            onClick={handleCheckout}
           >
-            <Typography variant="h6">Total: ${totalPrice}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={handleAddToCheckout}
-            >
-              Checkout
-            </Button>
-          </Box>
-        </>
-      )}
+            Proceed to Checkout
+          </Button>
+        </Grid>
+      </Grid>
     </Container>
   );
 }

@@ -1,31 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { getCurrentUser } from "../../redux/reducers/authReducer.js";
-
+import { getCurrentUser } from "../../redux/reducers/authReducer";
+import { getUserToken } from "../../shared/token"; 
+import Loader from "../../shared/Loader/Loader";
 const PrivateRoute = ({ element, redirectTo }) => {
-  const accessToken = localStorage.getItem("accessToken");
   const dispatch = useDispatch();
-  const { user, loading, success } = useSelector((state) => state.auth);
+  const { user, loading, error } = useSelector((state) => state.auth);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (!user && accessToken) {
-      dispatch(getCurrentUser(accessToken));
+    if (!user && getUserToken()) {
+      dispatch(getCurrentUser()).finally(() => setCheckingAuth(false));
+    } else {
+      setCheckingAuth(false);
     }
-  }, [dispatch, user, accessToken]);
+  }, [dispatch, user]);
 
-  // Display a loader while waiting for the response
-  if (loading) {
-    return <div>Loading...</div>;
+  // Display a loader while authentication is being verified
+  if (loading || checkingAuth) {
+    return <Loader />;
   }
 
-  // If there is no access token or user is not authenticated, redirect to login
-  if (!user && !loading) {
+  // Redirect if an authentication error occurs
+  if (error) {
     return <Navigate to={redirectTo} />;
   }
 
-  // If user is authenticated, render the protected component
-  return user ? element : null; // Fallback to avoid rendering issues
+  // Render the element only if user exists, otherwise redirect
+  return user ? element : <Navigate to={redirectTo} />;
 };
 
 export default PrivateRoute;

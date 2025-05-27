@@ -1,27 +1,19 @@
 import React, { useEffect } from "react";
-import { Container, Typography, Box, CircularProgress } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import OrderProductCard from "../components/OrderHistory/OrderProductCard";
-import { getOrders } from "../../redux/reducers/orderReducer.js";
+import OrderProductCard from "../components/Order/OrderProductCard";
+import { getOrders } from "../../redux/reducers/orderReducer";
+import Loader from "../components/Loader/Loader";
 
 const OrderHistoryPage = () => {
   const dispatch = useDispatch();
   const { myorders, loading } = useSelector((state) => state.orders);
-  const accessToken = useSelector((state) => state.auth.accessToken);
-
-  // Use useEffect to fetch orders only once when component mounts
   useEffect(() => {
-    if (!myorders || myorders.length === 0) {
-      dispatch(getOrders(accessToken));
-    }
-  }, [dispatch, myorders, accessToken]);
+    dispatch(getOrders());
+  }, [dispatch]);
 
   if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Loader />;
   }
 
   return (
@@ -29,15 +21,17 @@ const OrderHistoryPage = () => {
       <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
         Order History
       </Typography>
-      {myorders?.length > 0 ? (
-        myorders.map((orders) =>
-          orders?.orderItems?.map((item) => (
-            <OrderProductCard
-              key={item._id}
-              order={item}
-              orderDetails={[orders]}
-            />
-          ))
+      {Array.isArray(myorders) && myorders.length > 0 ? (
+        myorders.map(
+          (orders) =>
+            Array.isArray(orders?.orderItems) &&
+            orders?.orderItems.map((item) => (
+              <OrderProductCard
+                key={item?._id || item?.productId?._id} // Ensuring key is always unique
+                orderDate={orders?.createdAt}
+                orderDetails={item}
+              />
+            ))
         )
       ) : (
         <Box

@@ -1,53 +1,37 @@
-import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../shared/interceptor";
+
+const handleRequest = async (
+  method,
+  data = null,
+  url = "/cart",
+  config = {}
+) => {
+  try {
+    const response = await api[method](
+      url,
+      data ? { ...data, ...config } : config // Spread data correctly
+    );
+    return response.data;
+  } catch (error) {
+    console.error("API Error:", error.response?.data || error.message);
+    throw error.response?.data || error.message;
+  }
+};
 
 const CartServices = {
   // Add product to cart
-  addToCart: async (productId, accessToken) => {
-    return await axios.post(
-      `${API_URL}/cart`,
-      { productId },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-  },
+  addToCart: (productId) => handleRequest("post", { productId }),
 
   // Get cart details
-  getCart: async (accessToken) => {
-    const res = await axios.get(`${API_URL}/cart`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    // console.log(res)
-    return res;
-  },
+  getCart: () => handleRequest("get"),
 
   // Update quantity of product in cart
-  updateCart: async (productId, action, accessToken) => {
-    return await axios.put(
-      `${API_URL}/cart`,
-      { productId, action },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-  },
+  updateCart: (arg) => handleRequest("put", arg),
 
   // Remove product from cart
-  removeFromCart: async (productId, accessToken) => {
-    return await axios.delete(`${API_URL}/cart`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      data: { productId }, 
-    });
-  },
+  removeFromCart: (productId) => {
+    return handleRequest("delete", undefined, `/cart/${productId}`); // Correct url and remove unnecessary data
+  }
 };
 
 export default CartServices;

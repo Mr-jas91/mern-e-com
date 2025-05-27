@@ -9,42 +9,46 @@ import {
   logoutUser,
   getCurrentUser,
   getUserProfile,
+  updateUserDetails
 } from "../controller/userController.js";
 // Product controller
 import {
   getProducts,
   getProductDetails,
   getProductDetailsByCategory,
-  getCategory,
+  getCategory
 } from "../controller/productAndCategory.js";
 //order controller
 import {
   createOrder,
   getUserOrderHistory,
   getOrderDetails,
-  cancelOrder,
+  cancelOrder
 } from "../controller/orderController.js";
 //Cart controller
 import {
   addToCart,
   getCart,
   removeFromCart,
-  updateQuantity,
+  updateQuantity
 } from "../controller/cartController.js";
 
 // Wishlist controller
 import {
   addToWishlist,
   removeFromWishlist,
-  getWishlist,
+  getWishlist
 } from "../controller/wishlistController.js";
 
 //Authentication and user API
 router.route("/register").post(createUser);
 router.route("/login").post(loginUser);
-router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/auth").post(verifyJWT, getCurrentUser);
-router.route("/me").get(verifyJWT, getUserProfile);
+router.route("/logout").get(verifyJWT, logoutUser);
+router.route("/auth").get(verifyJWT, getCurrentUser);
+router
+  .route("/me")
+  .get(verifyJWT, getUserProfile)
+  .put(verifyJWT, updateUserDetails);
 
 // Products and category API
 router.route("/products").get(getProducts);
@@ -65,8 +69,8 @@ router
   .route("/cart")
   .post(verifyJWT, addToCart)
   .get(verifyJWT, getCart)
-  .put(verifyJWT, updateQuantity)
-  .delete(verifyJWT, removeFromCart);
+  .put(verifyJWT, updateQuantity);
+router.route("/cart/:productId").delete(verifyJWT, removeFromCart);
 
 // Wishlist API
 router

@@ -1,20 +1,24 @@
-import axios from "axios";
+import api from "../../shared/interceptor"
 
-const API_URL = import.meta.env.VITE_API_URL;
+const handleRequest = async (request) => {
+  try {
+    const response = await request;
+    return response.data;
+  } catch (error) {
+    console.error("API Error:", error.response?.data || error.message);
+    throw error.response?.data || error.message;
+  }
+};
 
 const ProductServices = {
-  getAllProducts: async () => {
-    return await axios.get(`${API_URL}/products`);
-  },
-  getProductById: async (productId) => {
-    return await axios.get(`${API_URL}/product/${productId}`);
-  },
-  getProductByCategory: async (category) => {
-    return await axios.get(`${API_URL}/products/category/${category}`);
-  },
-  getCategory: async () => {
-    return await axios.get(`${API_URL}/products/categories`);
-  },
+  getAllProducts: () => handleRequest(api.get(`/products`)),
+  getProductById: (productId) =>
+    handleRequest(api.get(`/product/${productId}`)),
+
+  getProductsByCategory: (category) =>
+    handleRequest(api.get(`/products/category/${category}`)),
+
+  getCategories: () => handleRequest(api.get(`/products/categories`))
 };
 
 export default ProductServices;

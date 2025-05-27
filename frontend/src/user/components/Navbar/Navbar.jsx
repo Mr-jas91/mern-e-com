@@ -2,16 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
-import { logoutUser } from "../../../redux/reducers/authReducer.js";
-import { getCart, clearCart } from "../../../redux/reducers/cartReducer.js";
+import { logoutUser } from "../../../redux/reducers/authReducer";
+import { getCart } from "../../../redux/reducers/cartReducer";
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, accessToken, error } = useSelector((state) => state.auth);
-  const { cartItems, totalPrice } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.cart);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const handleAvatarClick = () => {
     setIsDropdownOpen((prev) => !prev);
     setIsCartOpen(false);
@@ -28,46 +29,26 @@ const Navbar = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    try {
-      await dispatch(logoutUser(accessToken));
-      await dispatch(clearCart());
-      toast.success("Successfully logged out!", {
-        autoClose: 5000,
-        position: "top-center"
-      });
-      navigate("/");
-    } catch (error) {
-      toast.error("Logout failed. Please try again.", {
-        autoClose: 5000,
-        position: "top-center"
-      });
-    }
+    dispatch(logoutUser());
+    navigate("/home");
   };
+
   useEffect(() => {
     if (user) {
-      dispatch(getCart(accessToken));
+      dispatch(getCart());
     }
   }, [user]);
+
   return (
     <div className="navbar bg-black">
       <div className="flex-1">
-        <Link to="/" className="btn btn-ghost text-xl bg-white">
+        <Link to="/home" className="btn btn-ghost text-xl text-black bg-white">
           Myshop918
         </Link>
       </div>
 
-      {/* Search Bar */}
-      {/* <div className="flex-none mx-4 relative">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="input input-bordered w-full max-w-xs z-10"
-          style={{ transition: "all 0.3s ease" }}
-        />
-      </div> */}
-
+      {/* Cart Dropdown */}
       <div className="flex-none">
-        {/* Cart Dropdown */}
         <div className="dropdown dropdown-end">
           <div
             tabIndex={0}
@@ -91,7 +72,7 @@ const Navbar = () => {
                 />
               </svg>
               <span className="badge badge-sm indicator-item">
-                {cartItems?.length ? cartItems?.length : 0}
+                {cartItems?.items?.length ? cartItems?.items?.length : 0}
               </span>
             </div>
           </div>
@@ -102,17 +83,19 @@ const Navbar = () => {
             >
               <div className="card-body">
                 <span className="text-lg font-bold">
-                  {cartItems?.length
-                    ? `${cartItems.length} Items`
+                  {cartItems?.items?.length
+                    ? `${cartItems?.items?.length} Items`
                     : "Empty cart"}
                 </span>
 
                 <span className="text-info">
-                  {totalPrice ? `Subtotal: $ ${totalPrice.toFixed(2)}` : ""}
+                  {cartItems?.totalPrice
+                    ? `Subtotal: $ ${cartItems?.totalPrice.toFixed(2)}`
+                    : ""}
                 </span>
                 <div className="card-actions">
                   <Link
-                    to="/mycart"
+                    to="/cart"
                     className="btn btn-primary btn-block"
                     onClick={handleCartClick}
                   >
@@ -145,28 +128,22 @@ const Navbar = () => {
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
             >
               <li onClick={handleListItemClick}>
-                <Link to="/">Home</Link>
+                <Link to="/home">Home</Link>
               </li>
               <li onClick={handleListItemClick}>
-                <Link to="/myorders">My Orders</Link>
+                <Link to="/orders">My Orders</Link>
               </li>
               <li onClick={handleListItemClick}>
-                <Link to="/mycart">My Cart</Link>
+                <Link to="/cart">My Cart</Link>
               </li>
-              {/* <li onClick={handleListItemClick}>
-                <Link to="/wishlist">Wishlist</Link>
-              </li> */}
               <li onClick={handleListItemClick}>
-                <Link to="/profile">Profile</Link>
+                <Link to="/user/account">Profile</Link>
               </li>
-              {/* <li onClick={handleListItemClick}>
-                <Link to="/settings">Settings</Link>
-              </li> */}
               <li onClick={handleListItemClick}>
                 {user ? (
                   <button onClick={handleLogout}>Logout</button>
                 ) : (
-                  <Link to="/register">Register</Link>
+                  <Link to="/user/signin">Sign in</Link>
                 )}
               </li>
             </ul>

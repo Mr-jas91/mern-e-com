@@ -36,7 +36,7 @@ const createUser = asyncHandler(async (req, res) => {
       firstName,
       lastName,
       email,
-      password,
+      password
     });
 
     await admin.save();
@@ -56,11 +56,12 @@ const createUser = asyncHandler(async (req, res) => {
       .cookie("refreshToken", refreshToken, options)
       .cookie("accessToken", accessToken, options)
       .json(
-        new new ApiResponse(200, {
+        new ApiResponse(200, {
           message: "user registered successfully",
           refreshToken: refreshToken,
           accessToken: accessToken,
-        })()
+          admin: createdUser
+        })
       );
   } catch (error) {
     return res.status(500).json(new ApiError(500, "", error));
@@ -122,11 +123,11 @@ const logoutUser = asyncHandler(async (req, res) => {
       req.admin._id,
       {
         $set: {
-          refreshToken: "", // this removes the field from the document
-        },
+          refreshToken: "" // this removes the field from the document
+        }
       },
       {
-        new: true,
+        new: true
       }
     );
     const options = { httpOnly: true, secure: false, sameSite: "Lax" };

@@ -8,19 +8,17 @@ import {
   Chip
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { setOrderDetails,getOrderDetails } from "../../../redux/reducers/orderReducer.js";
-const OrderProductCard = ({ order, orderDetails }) => {
+import { useDispatch } from "react-redux";
+import { getOrderDetails } from "../../../redux/reducers/orderReducer.js";
+const OrderProductCard = ({ orderDate, orderDetails }) => {
+ 
+  const order = orderDetails?.productId;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { accessToken } = useSelector((state) => state.auth);
   const handleClick = () => {
-    // console.log(orderDetails);
-    dispatch(setOrderDetails(orderDetails));
-    // dispatch(getOrderDetails(accessToken));
-     navigate(`/myorder/${order?._id}/${order?.productId?._id}`);
+    dispatch(getOrderDetails(orderDetails?._id));
+    navigate(`/order/${orderDetails?._id}/details`);
   };
-  // console.log(orderDetails[0]);
   return (
     <Card
       sx={{
@@ -45,23 +43,39 @@ const OrderProductCard = ({ order, orderDetails }) => {
           objectFit: "cover",
           borderRadius: "4px 0 0 4px"
         }}
-        image={order?.productId?.images[0]}
-        alt={order?.productId?.name}
+        image={order?.images[0]}
+        alt={order?.name}
       />
       <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, p: 2 }}>
         <CardContent sx={{ flex: "1 0 auto", padding: 0 }}>
           <Typography component="div" variant="h6" sx={{ fontWeight: "bold" }}>
-            {order?.productId?.name}
+            {order?.name}
           </Typography>
           <Typography
             variant="subtitle1"
             color="text.secondary"
             component="div"
+            sx={{
+              textDecoration: order?.discount > 0 ? "line-through" : "none",
+              fontSize: "1rem"
+            }}
           >
-            ${order?.productId?.price?.toFixed(2)}
+            ${order?.price.toFixed(2)}
           </Typography>
+          {order?.discount > 0 && (
+            <Typography
+              variant="h6"
+              sx={{
+                color: "green",
+                fontWeight: "bold",
+                fontSize: "1.2rem"
+              }}
+            >
+              ${(order?.price - order.discount).toFixed(2)}
+            </Typography>
+          )}
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Ordered on: {new Date(orderDetails.createdAt).toLocaleDateString()}
+            Ordered on: {new Date(orderDate).toLocaleDateString()}
           </Typography>
         </CardContent>
         <Box
@@ -73,13 +87,13 @@ const OrderProductCard = ({ order, orderDetails }) => {
           }}
         >
           <Chip
-            label={order?.deliveryStatus}
+            label={orderDetails?.deliveryStatus}
             color={
-              order.deliveryStatus === "DELIVERED"
+              orderDetails.deliveryStatus === "DELIVERED"
                 ? "success"
-                : order.deliveryStatus === "SHIPPED"
+                : orderDetails.deliveryStatus === "SHIPPED"
                 ? "primary"
-                : order.deliveryStatus === "PENDING"
+                : orderDetails.deliveryStatus === "PENDING"
                 ? "warning"
                 : "default"
             }
