@@ -1,10 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate
-} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -21,9 +16,10 @@ import OrderDetailsPage from "./pages/OrderDetailsPage";
 import PrivateRoute from "./route/PrivateRoute";
 import PublicRoute from "./route/PublicRoute";
 import Loader from "../shared/Loader/Loader";
+
 function UserRoutes() {
   return (
-    <Router>
+    <>
       <Suspense fallback={<Loader />}>
         <Navbar />
         <ToastContainer
@@ -36,7 +32,6 @@ function UserRoutes() {
           theme="light"
         />
         <Routes>
-          {/* Public routes */}
           <Route
             path="/home"
             element={<PublicRoute element={<HomePage />} />}
@@ -110,11 +105,10 @@ function UserRoutes() {
             }
           />
 
-          {/* Fallback route */}
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
-    </Router>
+    </>
   );
 }
 

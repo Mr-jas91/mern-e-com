@@ -1,14 +1,14 @@
 import React from "react";
+import { Routes, Route } from "react-router-dom"; // Import Routes and Route
 import UserRoutes from "./user/UserRoutes";
 import AdminRoutes from "./admin/AdminRoutes";
 
 function App() {
-  const subdomain = window.location.hostname.split(".")[0];
-
   return (
-    <>
-      {subdomain === "admin" ? <AdminRoutes /> : <UserRoutes />}
-    </>
+    <Routes>
+      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="/*" element={<UserRoutes />} />
+    </Routes>
   );
 }
 

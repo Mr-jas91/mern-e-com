@@ -140,6 +140,9 @@ const Navbar = () => {
                 <Link to="/user/account">Profile</Link>
               </li>
               <li onClick={handleListItemClick}>
+                <Link to="/admin/dashboard">Admin</Link>
+              </li>
+              <li onClick={handleListItemClick}>
                 {user ? (
                   <button onClick={handleLogout}>Logout</button>
                 ) : (

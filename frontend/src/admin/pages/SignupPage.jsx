@@ -63,14 +63,14 @@ const SignupPage = () => {
         role: "admin"
       });
       
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } catch (error) {
       showToast("error", error?.message || "Something went wrong!");
     }
   };
 
   const handleLoginRedirect = () => {
-    navigate("/login");
+    navigate("/admin/login");
   };
 
   return (

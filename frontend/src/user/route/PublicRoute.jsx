@@ -10,9 +10,9 @@ const PublicRoute = ({ element, restricted, redirectTo }) => {
   const shouldRedirect = user && restricted;
 
   useEffect(() => {
-    // Check if the token exists and if user is not already loaded
+   
     if (!user && getUserToken()) {
-      dispatch(getCurrentUser()); // Fetch user data from the API
+      dispatch(getCurrentUser()); 
     }
   }, []);
 

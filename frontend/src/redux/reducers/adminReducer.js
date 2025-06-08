@@ -39,10 +39,10 @@ export const currentAdmin = createAsyncAction(
 );
 
 const setSuccessState = (state, action) => {
+  state.admin = action.payload?.data;
   state.loading = false;
   state.error = null;
   state.success = true;
-  state.admin = action.payload?.data;
 };
 
 const setLoadingState = (state) => {

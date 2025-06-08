@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { currentAdmin } from "../../redux/reducers/adminReducer";
-import { getAdminToken } from "../../shared/token"; 
+import { getAdminToken } from "../../shared/token";
 import Loader from "../../shared/Loader/Loader";
 const PrivateRoute = ({ element, redirectTo }) => {
   const dispatch = useDispatch();

@@ -40,8 +40,8 @@ const createUser = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("userAccessToken", accessToken, cookieOptions)
+    .cookie("userRefreshToken", refreshToken, cookieOptions)
     .json(
       new ApiResponse(
         201,
@@ -75,8 +75,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("userAccessToken", accessToken, cookieOptions)
+    .cookie("userRefreshToken", refreshToken, cookieOptions)
     .json(
       new ApiResponse(
         200,
@@ -99,15 +99,17 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .clearCookie("accessToken", cookieOptions)
-    .clearCookie("refreshToken", cookieOptions)
+    .clearCookie("userAccessToken", cookieOptions)
+    .clearCookie("userRefreshToken", cookieOptions)
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
 // Get current user
 const getCurrentUser = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const user = await User.findById(userId).select("firstName lastName email phone address");
+  const user = await User.findById(userId).select(
+    "firstName lastName email phone address"
+  );
 
   if (!user) {
     return res.status(400).json(new ApiError(400, "Please login"));
@@ -120,8 +122,8 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("refreshToken", refreshToken, Options)
-    .cookie("accessToken", accessToken, Options)
+    .cookie("userAccessToken", accessToken, Options)
+    .cookie("userRefreshToken", refreshToken, Options)
     .json(
       new ApiResponse(
         200,

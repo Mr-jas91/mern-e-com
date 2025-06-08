@@ -1,9 +1,9 @@
 import api from "../../shared/interceptor";
 import {
   setUserToken,
-  setRefreshToken,
-  getRefreshToken,
-  clearAllTokens
+  setUserRefreshToken,
+  getUserRefreshToken,
+  clearBothUserToken
 } from "../../shared/token";
 import showToast from "../../shared/toastMsg/showToast";
 const AuthService = {
@@ -11,31 +11,29 @@ const AuthService = {
     const response = await api.post("/register", formData);
     const { accessToken, refreshToken } = response?.data?.data;
     setUserToken(accessToken);
-    setRefreshToken(refreshToken);
+    setUserRefreshToken(refreshToken);
     return response;
   },
   login: async (formData) => {
     const response = await api.post("/login", formData);
     const { accessToken, refreshToken } = response?.data?.data;
     setUserToken(accessToken);
-    setRefreshToken(refreshToken);
+    setUserRefreshToken(refreshToken);
     return response;
   },
   getCurrentUser: async () => {
     const response = await api.get("/auth");
     const { accessToken, refreshToken } = response?.data?.data;
     setUserToken(accessToken);
-    setRefreshToken(refreshToken);
+    setUserRefreshToken(refreshToken);
     return response;
   },
   getUserProfile: async () => {
-    const res = await api.get("/me");
-    console.log("Response is ", res);
+    const res = await api.get("/me");;
     return res;
   },
   updateUserProfile: async (data) => {
     const res = await api.put("/me", data);
-    console.log("Response is ", res);
     return res;
   },
   logout: async () => {
@@ -47,12 +45,12 @@ const AuthService = {
       showToast("error", "Logged out failled!");
       return err.response?.data || err.message || "Logout failed"; // Returning a user-friendly error message
     } finally {
-      clearAllTokens(); // Ensure tokens are cleared in any case
+      clearBothUserToken(); // Ensure tokens are cleared in any case
     }
   },
   refreshAccessToken: async () => {
     try {
-      const refreshToken = getRefreshToken();
+      const refreshToken = getUserRefreshToken();
       if (!refreshToken) throw new Error("No refresh token available");
       const response = await api.post("/refresh-token", { refreshToken });
       const { accessToken } = response.data;

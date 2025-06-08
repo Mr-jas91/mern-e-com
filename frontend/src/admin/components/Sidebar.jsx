@@ -26,11 +26,11 @@ const SidebarContent = () => {
   const theme = useTheme(); 
 
   const menuItems = [
-    { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
-    { text: "Orders", icon: <ShoppingCart />, path: "/orders" },
-    { text: "Payments", icon: <Payment />, path: "/payments" },
-    { text: "Products", icon: <Inventory />, path: "/products" },
-    { text: "Logout", icon: <Logout />, path: "/login" }
+    { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+    { text: "Orders", icon: <ShoppingCart />, path: "/admin/orders" },
+    { text: "Payments", icon: <Payment />, path: "/admin/payments" },
+    { text: "Products", icon: <Inventory />, path: "/admin/products" },
+    { text: "Logout", icon: <Logout />, path: "/admin/login" }
   ];
 
   return (

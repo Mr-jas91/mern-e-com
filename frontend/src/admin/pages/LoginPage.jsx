@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading } = useSelector((state) => state.admin);
+  const { admin,loading } = useSelector((state) => state.admin);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -36,14 +36,14 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await dispatch(loginAdmin(formData));
-      console.log(res)
+      console.log(res,admin)
       if (res.payload.success) {
         showToast("success", "Successfully logged in!");
         setFormData({
           email: "",
           password: ""
         });
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
       } else {
         showToast("error", res.payload?.data);
       }
@@ -54,7 +54,7 @@ const LoginPage = () => {
 
   // Redirect to register page
   const handleRegisterRedirect = () => {
-    navigate("/register");
+    navigate("/admin/register");
   };
 
   return (

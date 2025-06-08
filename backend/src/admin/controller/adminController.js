@@ -53,8 +53,8 @@ const createUser = asyncHandler(async (req, res) => {
 
     return res
       .status(201)
-      .cookie("refreshToken", refreshToken, options)
-      .cookie("accessToken", accessToken, options)
+      .cookie("adminRefreshToken", refreshToken, options)
+      .cookie("adminAccessToken", accessToken, options)
       .json(
         new ApiResponse(200, {
           message: "user registered successfully",
@@ -89,8 +89,8 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = { httpOnly: true, secure: false, sameSite: "Lax" };
     res
       .status(200)
-      .cookie("refreshToken", refreshToken, options)
-      .cookie("accessToken", accessToken, options)
+      .cookie("adminRefreshToken", refreshToken, options)
+      .cookie("adminAccessToken", accessToken, options)
       .json(
         new ApiResponse(200, {
           message: "user verify",

@@ -2,12 +2,13 @@ import axios from "axios";
 import {
   getUserToken,
   getAdminToken,
-  clearAllTokens,
+  clearBothUserToken,
+  clearBothAdminToken
 } from "./token";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, 
-  timeout: 5000,
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 5000
 });
 
 // REQUEST INTERCEPTOR
@@ -34,9 +35,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      clearAllTokens();
       const isAdmin = error?.config?.url?.includes("/admin");
-      window.location.href = isAdmin ? "/admin/login" : "/login";
+
+      if (isAdmin) {
+        clearBothAdminToken(); // custom function to clear admin tokens
+        window.location.href = "/admin/login";
+      } else {
+        clearBothUserToken(); // custom function to clear user tokens
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

@@ -6,26 +6,31 @@ const AdminSchema = Schema(
     firstName: {
       type: String,
       required: true,
-      lowercase: true,
+      lowercase: true
     },
     lastName: {
       type: String,
       required: true,
-      lowercase: true,
+      lowercase: true
     },
     email: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
+      lowercase: true
     },
     password: {
       type: String,
-      required: [true, "Password required"],
+      required: [true, "Password required"]
     },
     refreshToken: {
-      type: String,
+      type: String
     },
+    isAdmin: {
+      type: Boolean,
+      default: true,
+      required: true
+    }
   },
   { timestamps: true }
 );
@@ -45,10 +50,11 @@ AdminSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
+      isAdmin: true
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    process.env.ADMIN_ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ADMIN_ACCESS_TOKEN_EXPIRY
     }
   );
 };
@@ -56,10 +62,11 @@ AdminSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      isAdmin: true
     },
-    process.env.REFRESH_TOKEN_SECRET,
+    process.env.ADMIN_REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRY
     }
   );
 };

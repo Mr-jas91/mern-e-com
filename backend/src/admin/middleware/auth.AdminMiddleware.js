@@ -6,30 +6,34 @@ import { Admin } from "../../models/admin.models.js";
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const token =
-      req.cookies?.refreshToken || // Check for the refreshToken cookie
+      req.cookies?.adminAccessToken ||
       (req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
         : null);
+
     if (!token) {
       return res.status(401).json(new ApiError(401, "Unauthorized request"));
     }
 
     let decodedToken;
     try {
-      decodedToken = await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+      decodedToken = jwt.verify(token, process.env.ADMIN_ACCESS_TOKEN_SECRET);
     } catch (err) {
-      console.log("Error", err.message);
+      console.log("JWT Error:", err.message);
       return res
         .status(401)
-        .json(new ApiError(401, "Invalid access token found"));
+        .json(new ApiError(401, "Invalid or expired access token"));
     }
+
     const admin = await Admin.findById(decodedToken?._id).select(
       "-password -refreshToken"
     );
 
-    if (!admin) {
-      return res.status(401).json(new ApiError(401, "Invalid Access Token"));
+    if (!admin || !admin.isAdmin) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "Access denied. Admin privileges required."));
     }
 
     req.admin = admin;
