@@ -1,23 +1,30 @@
 import { Product } from "../../models/product.models.js";
 import {
   uploadOnCloudinary,
-  deleteFromCloudinary,
+  deleteFromCloudinary
 } from "../../utils/cloudinary.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
 // POST: Add a new product
 const addProduct = asyncHandler(async (req, res) => {
-  const { name, price, description, category, stock } = req.body;
+  const { name, price, discountPrice, description, categoryId, stock } =
+    req.body;
 
   // Input validation
-  if (!name || !price || !description || !category || !stock) {
+  if (
+    !name ||
+    !price ||
+    !discountPrice ||
+    !description ||
+    !categoryId ||
+    !stock
+  ) {
     return res.status(400).json(new ApiError(400, "All fields are required"));
   }
 
   // Handle image uploads if present
   const images = req.files || [];
-
   // Upload images to Cloudinary or any other service
   const imageUrls = await Promise.all(
     images.map(async (img) => {
@@ -30,11 +37,12 @@ const addProduct = asyncHandler(async (req, res) => {
   const newProduct = new Product({
     name,
     price,
+    discount: price - discountPrice,
     description,
-    category,
+    category: categoryId,
     stock,
     images: imageUrls,
-    owner: req.admin._id,
+    owner: req.admin._id
   });
 
   // Save product to the database
@@ -43,12 +51,12 @@ const addProduct = asyncHandler(async (req, res) => {
   // Return success response
   return res
     .status(201)
-    .json(new ApiResponse(201, "Product added successfully", newProduct));
+    .json(new ApiResponse(201, "Product added successfully"));
 });
 
 //getProducts api
 const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({}).populate("owner", "firstName");
+  const products = await Product.find({}).populate("category", "name");
   if (!products) {
     return res.status(400).json(new ApiError(400, "No products found"));
   }
@@ -72,27 +80,32 @@ const getProductDetails = asyncHandler(async (req, res) => {
 const updateProductDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Validate product id
   if (!id) {
     return res.status(400).json(new ApiError(400, "Product id is required"));
   }
 
-  const { name, price, description, discount, stock, category } = req.body;
+  // Get fields from form-data
+  const { name, price, description, discountPrice, stock, categoryId } =
+    req.body;
 
-  // Validate required fields
-  if (!name || !price || !description || !discount || !stock || !category) {
+  if (
+    !name ||
+    !price ||
+    !description ||
+    !discountPrice ||
+    !stock ||
+    !categoryId
+  ) {
     return res.status(400).json(new ApiError(400, "All fields are required"));
   }
 
-  // Check if files are uploaded
-  const images = req.files;
-  if (images && images.length > 0) {
-    // Fetch existing images from DB
-    const product = await Product.findById(id).select("images");
-    if (!product) {
-      return res.status(404).json(new ApiError(404, "Product not found"));
-    }
+  let product = await Product.findById(id);
+  if (!product) {
+    return res.status(404).json(new ApiError(404, "Product not found"));
+  }
 
+  // Handle image upload if files are present
+  if (req.files && req.files.length > 0) {
     // Delete old images from cloud storage
     await Promise.all(
       product.images.map(async (element) => {
@@ -100,46 +113,31 @@ const updateProductDetails = asyncHandler(async (req, res) => {
       })
     );
 
-    // Upload new images to cloud storage
+    // Upload new images
     const uploadedImages = await Promise.all(
-      images.map(async (img) => {
+      req.files.map(async (img) => {
         const uploadedImageUrl = await uploadOnCloudinary(img.path);
         return uploadedImageUrl;
       })
     );
 
-    // Update product images in the DB
     product.images = uploadedImages;
   }
 
-  // Update product details in the DB
-  const updatedProduct = await Product.findByIdAndUpdate(
-    id,
-    {
-      $set: {
-        name,
-        price,
-        description,
-        discount,
-        stock,
-        category,
-        ...(images && images.length > 0 && { images: product.images }),
-      },
-    },
-    { new: true }
-  );
+  // Update product
+  product.name = name;
+  product.price = price;
+  product.description = description;
+  product.discount = price - discountPrice;
+  product.stock = stock;
+  product.category = categoryId;
 
-  // Check if product exists
-  if (!updatedProduct) {
-    return res.status(404).json(new ApiError(404, "Product not found"));
-  }
+  await product.save();
 
-  // Success response
   return res
     .status(200)
-    .json(new ApiResponse(200, "Product updated successfully", updatedProduct));
+    .json(new ApiResponse(200, "Product updated successfully"));
 });
-
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -157,9 +155,13 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 
   // If the product has an image, delete it from Cloudinary
-  if (product.image) {
+  if (product.images) {
     try {
-      await deleteFromCloudinary(product.image);
+      await Promise.all(
+        product.images.map(async (element) => {
+          await deleteFromCloudinary(element);
+        })
+      );
     } catch (error) {
       return res
         .status(500)
@@ -170,7 +172,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
   // Send success response
   return res
     .status(200)
-    .json(new ApiResponse(200, "Product deleted successfully", product));
+    .json(new ApiResponse(200, "Product deleted successfully"));
 });
 
 // Export the routes
@@ -179,5 +181,5 @@ export {
   getProducts,
   getProductDetails,
   updateProductDetails,
-  deleteProduct,
+  deleteProduct
 };

@@ -4,17 +4,21 @@ const orderItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-    required: true 
+    required: true
   },
   quantity: {
     type: Number,
     required: true,
-    min: 1 
+    min: 1
   },
   deliveryStatus: {
     type: String,
     enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
-    default: "PENDING" 
+    default: "PENDING"
+  },
+  tracking: {
+    type: String,
+    required: false
   }
 });
 

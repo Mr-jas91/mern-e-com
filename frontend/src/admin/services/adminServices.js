@@ -24,7 +24,6 @@ const AdminServices = {
     const { accessToken, refreshToken } = res.data?.data;
     setAdminToken(accessToken);
     setAdminRefreshToken(refreshToken);
-    console.log(res)
     return res;
   },
   adminProfile: async () => {

@@ -20,17 +20,6 @@ export default function CartPage() {
   const dispatch = useDispatch();
   const { cartItems } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
-
-  const totalPrice = cartItems.items.reduce(
-    (sum, item) => sum + item?.productId?.price * item?.quantity,
-    0
-  );
-  const discount = cartItems.items.reduce(
-    (sum, item) => sum + item?.productId?.discount * item?.quantity,
-    0
-  );
-  const finalPrice = totalPrice - discount;
-
   // Fetch cart details when the page loads (on refresh)
   useEffect(() => {
     if (user) {
@@ -87,13 +76,13 @@ export default function CartPage() {
                 variant="body1"
                 sx={{ textDecoration: "line-through", color: "text.secondary" }}
               >
-                ${totalPrice.toFixed(2)}
+                ₹{(cartItems?.totalPrice ?? 0).toFixed(2)}
               </Typography>
             </Box>
             <Box display="flex" justifyContent="space-between" mt={1}>
               <Typography variant="body1">Discount:</Typography>
               <Typography variant="body1" color="error">
-                - ${discount.toFixed(2)}
+                - ₹{(cartItems?.discount ?? 0).toFixed(2)}
               </Typography>
             </Box>
             <Divider sx={{ my: 2 }} />
@@ -102,7 +91,7 @@ export default function CartPage() {
                 Final Price:
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                ${finalPrice.toFixed(2)}
+                ₹{(cartItems?.finalPrice ?? 0).toFixed(2)}
               </Typography>
             </Box>
           </Paper>

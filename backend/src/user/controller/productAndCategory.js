@@ -17,9 +17,9 @@ const getProducts = asyncHandler(async (req, res) => {
 
 //getProductDetails API
 const getProductDetails = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id).select(
-    "name price description  images discount category ratings"
-  );
+  const product = await Product.findById(req.params.id)
+    .select("name price description  images discount category ratings")
+    .populate("category", "name");
   if (!product) {
     return res.status(404).json(new ApiError(404, "Product not found"));
   }
@@ -29,7 +29,7 @@ const getProductDetails = asyncHandler(async (req, res) => {
 //getProductsByCategory API
 const getProductDetailsByCategory = asyncHandler(async (req, res) => {
   const products = await Product.find({
-    category: req.params.categoryId,
+    category: req.params.categoryId
   })
     .select("name price description  images discount category ratings")
     .limit(10);
@@ -53,5 +53,5 @@ export {
   getProducts,
   getProductDetails,
   getProductDetailsByCategory,
-  getCategory,
+  getCategory
 };

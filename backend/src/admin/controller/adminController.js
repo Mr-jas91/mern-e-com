@@ -95,7 +95,7 @@ const loginUser = asyncHandler(async (req, res) => {
         new ApiResponse(200, {
           message: "user verify",
           refreshToken: refreshToken,
-          accessToken: accessToken,
+          accessToken: accessToken
         })
       );
   } catch (error) {
@@ -105,13 +105,27 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   try {
-    const user = await Admin.findById(req.admin._id);
+    const admin = await Admin.findById(req.admin._id);
 
-    if (!user) {
-      return res.status(400).json({ message: "User doesn't exist." });
+    if (!admin) {
+      return res.status(400).json({ message: "Admin doesn't exist." });
     }
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      admin._id
+    );
+    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
 
-    return res.status(200).json(new ApiResponse(200, "Authorized"));
+    return res
+      .status(200)
+      .cookie("adminRefreshToken", refreshToken, options)
+      .cookie("adminAccessToken", accessToken, options)
+      .json(
+        new ApiResponse(200, {
+          messsss: "Authorized",
+          refreshToken: refreshToken,
+          accessToken: accessToken
+        })
+      );
   } catch (error) {
     console.log("error", error);
     return res.status(400).json(new ApiError(400, "Please login", error));
@@ -133,8 +147,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     const options = { httpOnly: true, secure: false, sameSite: "Lax" };
     res
       .status(200)
-      .clearCookie("accessToken", options)
-      .clearCookie("refreshToken", options)
+      .clearCookie("adminAccessToken", options)
+      .clearCookie("adminRefreshToken", options)
       .json(new ApiResponse(200, "Logged out successfully!"));
   } catch (error) {
     res

@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { createOrder } from "../../redux/reducers/orderReducer";
 import Addressform from "../components/Checkout/Addressform";
 import CheckoutProducts from "../components/Checkout/CheckoutProducts";
-import showToast from "../components/toastMsg/showToast";
+import showToast from "../../shared/toastMsg/showToast"
 export default function CheckoutPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder =  () => {
     if (!validateFields()) return;
 
     const orderItems = products
@@ -77,9 +77,9 @@ export default function CheckoutPage() {
         productId: item.productId?._id,
         quantity: item.quantity
       }))
-      .filter((item) => item.productId); // Ensure only valid items are included
+      .filter((item) => item.productId); 
 
-    dispatch(
+     dispatch(
       createOrder({
         orderItems,
         shippingAddress,
@@ -87,14 +87,11 @@ export default function CheckoutPage() {
         paymentOption: selectedOption
       })
     );
-  };
-  useEffect(() => {
     if (success) {
-      console.log(success);
-      showToast("success", "Order placed successfully.");
-      navigate("/home");
-    }
-  }, [success, navigate]);
+          showToast("success", "Order placed successfully.");
+          navigate("/home");
+        }
+  };
 
   return (
     <Container maxWidth="lg">
@@ -134,7 +131,7 @@ export default function CheckoutPage() {
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="body1">Subtotal:</Typography>
                 <Typography variant="body1" fontWeight="bold">
-                  ${subtotal}
+                ₹{subtotal}
                 </Typography>
               </Box>
 
@@ -143,7 +140,7 @@ export default function CheckoutPage() {
                   Discount:
                 </Typography>
                 <Typography variant="body1" fontWeight="bold" color="error">
-                  -${discount}
+                  -₹{discount}
                 </Typography>
               </Box>
 
@@ -154,7 +151,7 @@ export default function CheckoutPage() {
                   Total:
                 </Typography>
                 <Typography variant="h6" fontWeight="bold">
-                  ${finalPrice}
+                ₹{finalPrice}
                 </Typography>
               </Box>
             </Stack>

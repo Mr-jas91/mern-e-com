@@ -35,7 +35,6 @@ const OrderDetailsPage = () => {
   useEffect(() => {
     dispatch(getOrderDetails(id));
   }, [dispatch, id]);
-
   if (loading) return <Loader />;
   if (!orderDetails || !orderDetails.orderItems?.length)
     return <Typography>No order details available</Typography>;
@@ -129,7 +128,7 @@ const OrderDetailsPage = () => {
                     fontWeight: product?.discount ? "normal" : "bold"
                   }}
                 >
-                  ${product?.price ? product.price.toFixed(2) : "N/A"}
+                  ₹{product?.price ? product.price.toFixed(2) : "N/A"}
                 </Typography>
 
                 {product?.discount && (
@@ -137,7 +136,7 @@ const OrderDetailsPage = () => {
                     variant="h5"
                     sx={{ color: "green", fontWeight: "bold" }}
                   >
-                    $
+                    ₹
                     {product?.price && product?.discount
                       ? (product.price - product.discount).toFixed(2)
                       : "N/A"}

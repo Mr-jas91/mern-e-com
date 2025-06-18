@@ -15,7 +15,6 @@ const getCategory = asyncHandler(async (req, res) => {
 // POST: Create a new category
 const createCategory = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   const category = new Category({ name });
   await category.save();
   return res.status(201).json(new ApiResponse(201, category));

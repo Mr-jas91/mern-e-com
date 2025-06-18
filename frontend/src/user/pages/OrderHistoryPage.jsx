@@ -3,7 +3,7 @@ import { Container, Typography, Box } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import OrderProductCard from "../components/Order/OrderProductCard";
 import { getOrders } from "../../redux/reducers/orderReducer";
-import Loader from "../components/Loader/Loader";
+import Loader from "../../shared/Loader/Loader"
 
 const OrderHistoryPage = () => {
   const dispatch = useDispatch();

@@ -30,7 +30,8 @@ import {
 import {
   getOrders,
   getOrderDetails,
-  updateDeliveryStatus
+  updateDeliveryStatus,
+  acceptOrderItem
 } from "../controller/orderController.js";
 
 // Product controller
@@ -78,17 +79,18 @@ router.route("/updateinventry/:id").put(verifyJWT, updateInventory);
 // Order routes
 router.route("/orders").get(verifyJWT, getOrders);
 router.route("/order/:id").get(verifyJWT, getOrderDetails);
-router.route("/updatedeliverystatus/:id").put(verifyJWT, updateDeliveryStatus);
+router.route("/updatedeliverystatus").post(verifyJWT, updateDeliveryStatus);
+router.route("/accept-order/:id").put(verifyJWT, acceptOrderItem);
 
 // Product routes
 router
   .route("/addproduct")
-  .post(verifyJWT, upload.array("image", 10), addProduct);
+  .post(verifyJWT, upload.array("images", 10), addProduct);
 router.route("/products").get(verifyJWT, getProducts);
 router
   .route("/product/:id")
   .get(verifyJWT, getProductDetails)
-  .put(verifyJWT, upload.array("image", 10), updateProductDetails)
+  .post(verifyJWT, upload.array("images", 10), updateProductDetails)
   .delete(verifyJWT, deleteProduct);
 
 // Review routes

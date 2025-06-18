@@ -8,9 +8,9 @@ const PrivateRoute = ({ element, redirectTo }) => {
   const dispatch = useDispatch();
   const { admin, loading, error } = useSelector((state) => state.admin);
   const [checkingAuth, setCheckingAuth] = useState(true);
-
+  const token = getAdminToken();
   useEffect(() => {
-    if (!admin && getAdminToken()) {
+    if (!admin && !token) {
       dispatch(currentAdmin()).finally(() => setCheckingAuth(false));
     } else {
       setCheckingAuth(false);
@@ -18,7 +18,7 @@ const PrivateRoute = ({ element, redirectTo }) => {
   }, [dispatch, admin]);
 
   // Display a loader while authentication is being verified
-  if (loading || checkingAuth) {
+  if (checkingAuth || loading) {
     return <Loader />;
   }
 

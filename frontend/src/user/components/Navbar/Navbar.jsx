@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../../redux/reducers/authReducer";
-import { getCart } from "../../../redux/reducers/cartReducer";
+import { getCart, clearCart } from "../../../redux/reducers/cartReducer";
+
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -30,6 +31,7 @@ const Navbar = () => {
   const handleLogout = async (e) => {
     e.preventDefault();
     dispatch(logoutUser());
+    dispatch(clearCart());
     navigate("/home");
   };
 
@@ -37,7 +39,7 @@ const Navbar = () => {
     if (user) {
       dispatch(getCart());
     }
-  }, [user]);
+  }, [dispatch, user]);
 
   return (
     <div className="navbar bg-black">
@@ -89,8 +91,8 @@ const Navbar = () => {
                 </span>
 
                 <span className="text-info">
-                  {cartItems?.totalPrice
-                    ? `Subtotal: $ ${cartItems?.totalPrice.toFixed(2)}`
+                  {cartItems?.finalPrice
+                    ? `Subtotal: ₹ ${cartItems?.finalPrice.toFixed(2)}`
                     : ""}
                 </span>
                 <div className="card-actions">

@@ -21,7 +21,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchProductById } from "../../redux/reducers/productReducer.js";
 import { addToCart } from "../../redux/reducers/cartReducer.js";
 import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer.js";
-import Loader from "../components/Loader/Loader.jsx";
+import Loader from "../../shared/Loader/Loader.jsx";
 
 const ProductLandingPage = () => {
   const dispatch = useDispatch();
@@ -110,7 +110,7 @@ const ProductLandingPage = () => {
             {product?.name}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Category: {product?.category}
+            Category: {product?.category.name}
           </Typography>
           <Typography variant="body1" paragraph>
             {product?.description}
@@ -122,10 +122,10 @@ const ProductLandingPage = () => {
               color="text.secondary"
               sx={{ textDecoration: "line-through", mr: 2 }}
             >
-              ${product?.price.toFixed(2)}
+              ₹{product?.price.toFixed(2)}
             </Typography>
             <Typography variant="h5" color="error">
-              ${(product.price - product.discount).toFixed(2)}
+            ₹{(product.price - product.discount).toFixed(2)}
             </Typography>
             <Chip
               label={`${product?.discount.toFixed(2)}% OFF`}

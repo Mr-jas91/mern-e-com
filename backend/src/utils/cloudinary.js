@@ -3,7 +3,7 @@ import fs from "fs";
 // Configuration
 try {
   cloudinary.config({
-    cloud_name: "dy5vms6wh",
+    cloud_name: "jasvantcloud",
     api_key: "947336797196983",
     api_secret: "5lyOmajz5i6h6MGwcR8rLO88JLQ",
   });

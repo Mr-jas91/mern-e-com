@@ -14,7 +14,6 @@ const createAsyncAction = (type, serviceFunction) => {
       const response = payload
         ? await serviceFunction(payload)
         : await serviceFunction();
-      console.log(type, response);
       return response.data;
     } catch (error) {
       console.error(type, "error:", error?.response?.data || error.message);

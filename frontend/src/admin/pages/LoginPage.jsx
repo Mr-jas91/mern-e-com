@@ -36,7 +36,6 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await dispatch(loginAdmin(formData));
-      console.log(res,admin)
       if (res.payload.success) {
         showToast("success", "Successfully logged in!");
         setFormData({

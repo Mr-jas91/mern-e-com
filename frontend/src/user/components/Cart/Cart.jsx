@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
   IconButton,
   Typography,
@@ -22,20 +21,16 @@ import {
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.cart);
-  // Extract product details
+
   const { name, price, discount } = item?.productId;
   const { _id } = item;
 
-  // Handle quantity changes
   const handleQuantityChange = (action) => {
-    if (action === "increase") {
-      dispatch(updateCart({ _id, action }));
-    } else if (action === "decrease" && item?.quantity > 1) {
+    if (action === "increase" || (action === "decrease" && item?.quantity > 1)) {
       dispatch(updateCart({ _id, action }));
     }
   };
 
-  // Remove item from cart
   const handleRemoveItem = () => {
     dispatch(removeFromCart(_id));
   };
@@ -47,10 +42,26 @@ const CartItem = ({ item }) => {
         <Typography variant="h6" fontWeight="bold">
           {name}
         </Typography>
-        <Typography color="textSecondary">
-          Price: <b>${(price * item?.quantity).toFixed(2)}</b> | Discount Price:{" "}
-          <b>${((price - discount) * item?.quantity).toFixed(2)}</b>
-        </Typography>
+        <Box display="flex" gap={1} alignItems="center">
+          <Typography
+            variant="body2"
+            sx={{
+              color: "error.main",
+              textDecoration: "line-through"
+            }}
+          >
+           ₹{(price * item?.quantity).toFixed(2)}
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "green",
+              fontWeight: "bold"
+            }}
+          >
+           Final Price ₹{((price - discount) * item?.quantity).toFixed(2)}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Quantity Controls */}
@@ -62,11 +73,9 @@ const CartItem = ({ item }) => {
         >
           <RemoveIcon />
         </IconButton>
-
         <Typography variant="body1" fontWeight="bold">
           {item?.quantity}
         </Typography>
-
         <IconButton
           onClick={() => handleQuantityChange("increase")}
           size="small"

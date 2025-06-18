@@ -9,19 +9,21 @@ import {
   Paper
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { updateUserProfile } from "../../redux/reducers/authReducer";
+import {
+  getUserProfile,
+  updateUserProfile
+} from "../../redux/reducers/authReducer";
+import showToast from "../../shared/toastMsg/showToast";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user);
+  const { user } = useSelector((state) => state.auth);
   const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState(user || {});
+  const [userData, setUserData] = useState({});
 
   useEffect(() => {
-    if (user) {
-      setUserData({ ...user });
-    }
-  }, [user]);
+    setUserData(user);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,8 +35,10 @@ const ProfilePage = () => {
     try {
       await dispatch(updateUserProfile(userData)).unwrap();
       setIsEditing(false);
+      showToast("success", "Profile updated successfully");
     } catch (error) {
       console.error("Failed to update profile:", error);
+      showToast("error", "Failed to update profile");
     }
   };
 
@@ -73,8 +77,8 @@ const ProfilePage = () => {
                 id="email"
                 label="Email Address"
                 name="email"
-                value={userData.email || ""}
-                disabled={true}
+                value={userData?.email || ""}
+                disabled
               />
             </Grid>
           </Grid>

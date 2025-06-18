@@ -14,7 +14,6 @@ const store = configureStore({
     orders: orderSlice,
     admin: adminReducer
   },
-  devTools: import.meta.env.DEV,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

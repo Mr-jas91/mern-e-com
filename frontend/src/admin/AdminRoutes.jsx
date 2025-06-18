@@ -9,7 +9,7 @@ import ProductsPage from "./pages/ProductsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import PublicRoute from "./route/PublicRoute";
-import PrivateRoute from "../user/route/PrivateRoute";
+import PrivateRoute from "./route/PrivateRoute";
 import Loader from "../shared/Loader/Loader";
 
 const AdminRoutes = () => {

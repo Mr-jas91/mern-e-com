@@ -5,7 +5,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Box,
+  Box
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,7 +41,7 @@ const ProductCard = ({ product }) => {
         borderRadius: 2,
         boxShadow: 3,
         transition: "transform 0.2s ease-in-out",
-        "&:hover": { transform: "scale(1.02)" },
+        "&:hover": { transform: "scale(1.02)" }
       }}
       onClick={() => navigate(`/product/${product._id}`)}
     >
@@ -55,7 +55,7 @@ const ProductCard = ({ product }) => {
           alignItems: "center",
           backgroundColor: "#f9f9f9",
           borderRadius: 2,
-          overflow: "hidden",
+          overflow: "hidden"
         }}
       >
         <CardMedia
@@ -67,7 +67,7 @@ const ProductCard = ({ product }) => {
             maxHeight: "100%",
             objectFit: "cover",
             transition: "opacity 0.3s ease-in-out",
-            "&:hover": { opacity: 0.9 },
+            "&:hover": { opacity: 0.9 }
           }}
         />
       </Box>
@@ -81,7 +81,7 @@ const ProductCard = ({ product }) => {
             fontSize: "1rem",
             whiteSpace: "nowrap",
             overflow: "hidden",
-            textOverflow: "ellipsis",
+            textOverflow: "ellipsis"
           }}
         >
           {product?.name || "Product Name"}
@@ -95,10 +95,10 @@ const ProductCard = ({ product }) => {
           color="text.secondary"
           sx={{ textDecoration: "line-through" }}
         >
-          ${product?.price?.toFixed(2) || "0.00"}
+          ₹{product?.price?.toFixed(2) || "0.00"}
         </Typography>
         <Typography variant="body2" color="primary" fontWeight={600}>
-          ${(product?.price - (product?.discount || 0)).toFixed(2)}
+          ₹{(product?.price - (product?.discount || 0)).toFixed(2)}
         </Typography>
       </Box>
 
@@ -111,7 +111,7 @@ const ProductCard = ({ product }) => {
           color: "white",
           fontWeight: "bold",
           "&:hover": { bgcolor: added ? "#66bb6a" : "#424242" },
-          transition: "background 0.3s ease-in-out",
+          transition: "background 0.3s ease-in-out"
         }}
         onClick={handleAddToCart}
       >
