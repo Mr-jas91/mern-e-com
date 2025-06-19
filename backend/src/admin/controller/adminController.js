@@ -49,7 +49,7 @@ const createUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       admin._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
+    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
 
     return res
       .status(201)
@@ -86,7 +86,7 @@ const loginUser = asyncHandler(async (req, res) => {
       existUser._id
     );
 
-    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
+    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
     res
       .status(200)
       .cookie("adminRefreshToken", refreshToken, options)
@@ -113,7 +113,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       admin._id
     );
-    const options = { httpOnly: true, secure: false, sameSite: "Lax" };
+    const options = { httpOnly: true, secure: false, sameSite: "Strict" };
 
     return res
       .status(200)
