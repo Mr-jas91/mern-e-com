@@ -1,16 +1,19 @@
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import DashboardPage from "./pages/DashboardPage";
-import OrdersPage from "./pages/OrdersPage";
-import PaymentPage from "./pages/PaymentPage";
-import ProductsPage from "./pages/ProductsPage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
 import PublicRoute from "./route/PublicRoute";
 import PrivateRoute from "./route/PrivateRoute";
 import Loader from "../shared/Loader/Loader";
+
+// Lazy-loaded pages
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const ProductsPage = lazy(() => import("./pages/ProductsPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
+
 
 const AdminRoutes = () => {
   return (

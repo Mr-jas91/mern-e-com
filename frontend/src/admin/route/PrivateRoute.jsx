@@ -10,12 +10,15 @@ const PrivateRoute = ({ element, redirectTo }) => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const token = getAdminToken();
   useEffect(() => {
-    if (!admin && !token) {
+    // 🟢 If token exists but admin is not in store, fetch user info
+    if (token && !admin) {
       dispatch(currentAdmin()).finally(() => setCheckingAuth(false));
     } else {
+      // ❌ Don't try to check auth if no token exists at all
       setCheckingAuth(false);
     }
-  }, [dispatch, admin]);
+  }, [dispatch, admin, token]);
+  
 
   // Display a loader while authentication is being verified
   if (checkingAuth || loading) {

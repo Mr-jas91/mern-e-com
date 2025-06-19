@@ -20,12 +20,18 @@ const AdminServices = {
     return await api.get("/admin/logout");
   },
   getCurrentAdmin: async () => {
+    const token = localStorage.getItem("adminToken"); // or getAdminToken()
+    if (!token) {
+      // simulate reject in thunk
+      throw new Error("No token available");
+    }
     const res = await api.get("/admin/auth");
     const { accessToken, refreshToken } = res.data?.data;
     setAdminToken(accessToken);
     setAdminRefreshToken(refreshToken);
     return res;
   },
+  
   adminProfile: async () => {
     return await api.get("/admin/profile");
   }
