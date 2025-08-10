@@ -3,7 +3,6 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { Order } from "../../models/order.models.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
-
 // GET all orders
 const getOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find().select(
@@ -32,7 +31,7 @@ const getOrderDetails = asyncHandler(async (req, res) => {
 // Post update specific product delivery status and tracking link
 const updateDeliveryStatus = asyncHandler(async (req, res) => {
   const { productId, deliveryStatus, tracking } = req.body;
-console.log(productId, deliveryStatus, tracking)
+  console.log(productId, deliveryStatus, tracking);
   if (!productId) throw new ApiError(400, "Product ID is required");
 
   const order = await Order.findOne({ "orderItems._id": productId });
@@ -54,9 +53,10 @@ console.log(productId, deliveryStatus, tracking)
 
   await order.save();
 
-  res.status(200).json(new ApiResponse(200, order, "Delivery status updated successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, order, "Delivery status updated successfully"));
 });
-
 
 // PUT accept order item
 const acceptOrderItem = asyncHandler(async (req, res) => {

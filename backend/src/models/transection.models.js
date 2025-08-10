@@ -4,37 +4,37 @@ const transectionSchema = new mongoose.Schema(
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
-      required: true,
+      required: true
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: true
     },
     paymentmethod: {
       type: String,
-      required: true,
+      required: true
     },
-    paymeentStatus: {
+    paymentStatus: {
       type: String,
       required: true,
-      enum: ["Pending", "Complete", "Failed"],
+      enum: ["Pending", "Complete", "Failed"]
     },
     transectionId: {
       type: String,
       required: true,
-      unique: true,
+      unique: true
     },
     transectionDate: {
       type: Date,
-      required: true,
+      required: true
     },
     amount: {
       type: Number,
-      required: true,
-    },
+      required: true
+    }
   },
   { timestamps: true }
 );
 
-export const Transaction = mongoose.model("Transaction", transectionSchema);
+export const Transection = mongoose.model("Transection", transectionSchema);

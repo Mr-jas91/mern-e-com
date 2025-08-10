@@ -4,9 +4,9 @@ import { asyncHandler } from "../../utils/asyncHander.js";
 import { Order } from "../../models/order.models.js";
 import { Product } from "../../models/product.models.js";
 import { User } from "../../models/user.models.js";
+import { Transection } from "../../models/transection.models.js";
 import { Types } from "mongoose";
 const { ObjectId } = Types;
-
 // @desc Create user's new order
 const createOrder = asyncHandler(async (req, res) => {
   const { orderItems, shippingAddress, orderPrice, paymentOption } = req.body;
@@ -70,6 +70,25 @@ const createOrder = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   user.orderHistory.push(newOrder._id);
   await user.save();
+  // ✅ Create Transaction if payment is online
+  // if (["ONLINE_UPI", "DEBIT_CARD"].includes(paymentOption)) {
+  //   if (!transectionId ) {
+  //     return res
+  //       .status(400)
+  //       .json(
+  //         new ApiError(400, "Transaction ID is required for online payment")
+  //       );
+  //   }
+
+  await Transection.create({
+    order: newOrder._id,
+    user: req.user._id,
+    paymentmethod: paymentOption,
+    paymentStatus: "Pending",
+    transectionId: "transactionId",
+    transectionDate: new Date(),
+    amount: orderPrice
+  });
 
   res.status(201).json(
     new ApiResponse(201, {

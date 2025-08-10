@@ -69,17 +69,17 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder =  () => {
+  const handlePlaceOrder = async () => {
     if (!validateFields()) return;
-
+  
     const orderItems = products
       .map((item) => ({
         productId: item.productId?._id,
         quantity: item.quantity
       }))
-      .filter((item) => item.productId); 
-
-     dispatch(
+      .filter((item) => item.productId);
+  
+    const result = await dispatch(
       createOrder({
         orderItems,
         shippingAddress,
@@ -87,11 +87,15 @@ export default function CheckoutPage() {
         paymentOption: selectedOption
       })
     );
-    if (success) {
-          showToast("success", "Order placed successfully.");
-          navigate("/home");
-        }
+  
+    if (createOrder.fulfilled.match(result)) {
+      showToast("success", "Order placed successfully.");
+      navigate("/home");
+    } else {
+      showToast("error", result.payload || "Failed to place order.");
+    }
   };
+  
 
   return (
     <Container maxWidth="lg">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Container,
   Typography,
@@ -14,16 +14,40 @@ import {
   updateUserProfile
 } from "../../redux/reducers/authReducer";
 import showToast from "../../shared/toastMsg/showToast";
+import isEqual from "lodash.isequal";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [isEditing, setIsEditing] = useState(false);
+
   const [userData, setUserData] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
+
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    setUserData(user);
-  }, []);
+    if (!hasFetched.current) {
+      const fetchData = async () => {
+        setLocalLoading(true);
+        try {
+          await dispatch(getUserProfile()).unwrap();
+        } catch (error) {
+          showToast("error", "Failed to fetch user profile");
+        } finally {
+          setLocalLoading(false);
+          hasFetched.current = true;
+        }
+      };
+      fetchData();
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (user && !isEqual(userData, user)) {
+      setUserData(user);
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,10 +61,13 @@ const ProfilePage = () => {
       setIsEditing(false);
       showToast("success", "Profile updated successfully");
     } catch (error) {
-      console.error("Failed to update profile:", error);
       showToast("error", "Failed to update profile");
     }
   };
+
+  if (localLoading) {
+    return <Typography align="center">Loading profile...</Typography>;
+  }
 
   return (
     <Container component="main" maxWidth="sm">

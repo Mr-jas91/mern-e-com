@@ -55,6 +55,9 @@ import {
   getActiveUsersCount
 } from "../controller/userController.js";
 
+// Transection controller
+import { getTransection } from "../controller/transectionController.js";
+
 // Create router
 const router = express.Router();
 
@@ -101,4 +104,6 @@ router.route("/review/:reviewId").delete(verifyJWT, deleteReview);
 router.route("/users").get(verifyJWT, getAllUsers);
 router.route("/activeuser").get(verifyJWT, getActiveUsersCount);
 
+//Transection rouotes
+router.route("/transection").get(verifyJWT, getTransection);
 export default router;

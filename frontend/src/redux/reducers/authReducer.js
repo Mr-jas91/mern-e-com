@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import isEqual from "lodash.isequal";
 import AuthService from "../../user/services/authServices";
 import {
   AUTH_REGISTER,
@@ -14,7 +15,7 @@ const createAsyncAction = (type, serviceFunction) => {
       const response = payload
         ? await serviceFunction(payload)
         : await serviceFunction();
-      // console.log(type, response);
+      console.log(type, response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data || error.message);
@@ -64,10 +65,11 @@ const setErrorState = (state, action) => {
 };
 
 const setSuccessState = (state, action) => {
-  const userData =
-    action.payload?.data?.user || action.payload?.user || action.payload;
+  const newUserData = action.payload?.data?.user;
+  if (!isEqual(state.user, newUserData)) {
+    state.user = newUserData;
+  }
   state.loading = false;
-  state.user = userData;
   state.success = true;
   state.error = null;
 };
@@ -112,8 +114,8 @@ const authSlice = createSlice({
       .addCase(getCurrentUser.pending, setLoadingState)
       .addCase(getCurrentUser.fulfilled, setSuccessState)
       .addCase(getCurrentUser.rejected, setErrorState);
-    builder.addCase(getUserProfile.pending, setLoadingState);
     builder
+      .addCase(getUserProfile.pending, setLoadingState)
       .addCase(getUserProfile.fulfilled, setSuccessState)
       .addCase(getUserProfile.rejected, setErrorState);
     builder

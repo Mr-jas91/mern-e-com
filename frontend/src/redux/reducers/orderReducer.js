@@ -31,7 +31,7 @@ const createAsyncAction = (type, serviceMethod) =>
   createAsyncThunk(type, async (payload, { rejectWithValue }) => {
     try {
       const response = await serviceMethod(payload);
-      console.log(response);
+      console.log(type, response.data);
       return { type, data: response.data };
     } catch (error) {
       return rejectWithValue(
@@ -84,18 +84,14 @@ const handlePending = (state) => {
 };
 
 const handleFulfilled = (state, action) => {
+  console.log(state, action.payload.data);
   state.loading = false;
   state.success = true;
   state.error = null;
-
-  const { type, data } = action.payload;
-
+  const data = action.payload.data;
+  const type = action.payload.type;
   switch (type) {
     // USER
-    case create_Order:
-      // Optional: add to myorders or show confirmation
-      break;
-
     case get_Orders:
       state.myorders = data?.data?.orders || [];
       break;
