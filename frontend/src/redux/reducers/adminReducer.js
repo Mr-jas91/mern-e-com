@@ -14,11 +14,12 @@ const createAsyncAction = (type, serviceFunction) => {
       const response = payload
         ? await serviceFunction(payload)
         : await serviceFunction();
+      // console.log(type,response.data);
       return response.data;
     } catch (error) {
       console.error(type, "error:", error?.response?.data || error.message);
       return rejectWithValue(error?.response?.data || error.message);
-    }    
+    }
   });
 };
 
@@ -85,19 +86,19 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-     .addCase(registerAdmin.pending, setLoadingState)
-     .addCase(registerAdmin.fulfilled, setSuccessState)
-     .addCase(registerAdmin.rejected, setErrorState)
-     .addCase(loginAdmin.pending, setLoadingState)
-     .addCase(loginAdmin.fulfilled, setSuccessState)
-     .addCase(loginAdmin.rejected, setErrorState)
-     .addCase(logout.fulfilled, setResetState)
-     .addCase(adminProfile.pending, setLoadingState)
-     .addCase(adminProfile.fulfilled, setSuccessState)
-     .addCase(adminProfile.rejected, setErrorState)
-     .addCase(currentAdmin.pending, setLoadingState)
-     .addCase(currentAdmin.fulfilled, setSuccessState)
-     .addCase(currentAdmin.rejected, setErrorState);
+      .addCase(registerAdmin.pending, setLoadingState)
+      .addCase(registerAdmin.fulfilled, setSuccessState)
+      .addCase(registerAdmin.rejected, setErrorState)
+      .addCase(loginAdmin.pending, setLoadingState)
+      .addCase(loginAdmin.fulfilled, setSuccessState)
+      .addCase(loginAdmin.rejected, setErrorState)
+      .addCase(logout.fulfilled, setResetState)
+      .addCase(adminProfile.pending, setLoadingState)
+      .addCase(adminProfile.fulfilled, setSuccessState)
+      .addCase(adminProfile.rejected, setErrorState)
+      .addCase(currentAdmin.pending, setLoadingState)
+      .addCase(currentAdmin.fulfilled, setSuccessState)
+      .addCase(currentAdmin.rejected, setErrorState);
   }
 });
 

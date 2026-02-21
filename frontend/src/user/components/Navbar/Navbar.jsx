@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../../redux/reducers/authReducer";
-import { getCart, clearCart } from "../../../redux/reducers/cartReducer";
+import { getCart, clearCartState } from "../../../redux/reducers/cartReducer";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.cart);
+  const { cart } = useSelector((state) => state.cart);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -74,7 +74,7 @@ const Navbar = () => {
                 />
               </svg>
               <span className="badge badge-sm indicator-item">
-                {cartItems?.items?.length ? cartItems?.items?.length : 0}
+                {cart?.items?.length ? cart?.items?.length : 0}
               </span>
             </div>
           </div>
@@ -85,14 +85,14 @@ const Navbar = () => {
             >
               <div className="card-body">
                 <span className="text-lg font-bold">
-                  {cartItems?.items?.length
-                    ? `${cartItems?.items?.length} Items`
+                  {cart?.items?.length
+                    ? `${cart?.items?.length} Items`
                     : "Empty cart"}
                 </span>
 
                 <span className="text-info">
-                  {cartItems?.finalPrice
-                    ? `Subtotal: ₹ ${cartItems?.finalPrice.toFixed(2)}`
+                  {cart?.finalPrice
+                    ? `Subtotal: ₹ ${cart?.finalPrice.toFixed(2)}`
                     : ""}
                 </span>
                 <div className="card-actions">

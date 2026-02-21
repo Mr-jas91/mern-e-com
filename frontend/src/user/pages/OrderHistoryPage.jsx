@@ -2,14 +2,14 @@ import React, { useEffect } from "react";
 import { Container, Typography, Box } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import OrderProductCard from "../components/Order/OrderProductCard";
-import { getOrders } from "../../redux/reducers/orderReducer";
+import { getMyOrders } from "../../redux/reducers/orderReducer";
 import Loader from "../../shared/Loader/Loader"
 
 const OrderHistoryPage = () => {
   const dispatch = useDispatch();
   const { myorders, loading } = useSelector((state) => state.orders);
   useEffect(() => {
-    dispatch(getOrders());
+    dispatch(getMyOrders());
   }, [dispatch]);
 
   if (loading) {

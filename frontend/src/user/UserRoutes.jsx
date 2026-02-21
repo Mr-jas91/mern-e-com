@@ -1,139 +1,98 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Lazy-loaded pages
-const CartPage = lazy(() => import("./pages/CartPage"));
-const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
-const HomePage = lazy(() => import("./pages/HomePage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const OrderHistoryPage = lazy(() => import("./pages/OrderHistoryPage"));
-const ProductPage = lazy(() => import("./pages/ProductPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const Navbar = lazy(() => import("./components/Navbar/Navbar"));
-
-// Non-lazy (or already loaded) component
-import OrderDetailsPage from "./pages/OrderDetailsPage";
+// Shared Components
 import PrivateRoute from "./route/PrivateRoute";
 import PublicRoute from "./route/PublicRoute";
-import Loader from "../shared/Loader/Loader";
+
+// Lazy Components
+const Navbar = lazy(() => import("./components/Navbar/Navbar"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const OrderHistoryPage = lazy(() => import("./pages/OrderHistoryPage"));
+const OrderDetailsPage = lazy(() => import("./pages/OrderDetailsPage"));
 
 function UserRoutes() {
   return (
     <>
-      {/* Static UI (no suspense needed) */}
-      <Suspense fallback={<Loader />}>
-        <Navbar />
-      </Suspense>
+      <Navbar />
 
       <ToastContainer
         position="bottom-right"
         autoClose={2000}
         hideProgressBar={false}
+        newestOnTop={false}
         closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
         draggable
         pauseOnHover
         theme="light"
       />
 
       <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/home"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PublicRoute element={<HomePage />} />
-            </Suspense>
-          }
-        />
+        {/* --- PUBLIC ROUTES --- */}
+        <Route path="/home" element={<PublicRoute element={<HomePage />} />} />
+
         <Route
           path="/product/:id"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PublicRoute element={<ProductPage />} />
-            </Suspense>
-          }
+          element={<PublicRoute element={<ProductPage />} />}
         />
+
         <Route
           path="/user/signin"
           element={
-            <Suspense fallback={<Loader />}>
-              <PublicRoute
-                element={<LoginPage />}
-                restricted
-                redirectTo="/home"
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/user/register"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PublicRoute
-                element={<RegisterPage />}
-                restricted
-                redirectTo="/home"
-              />
-            </Suspense>
-          }
-        />
-
-        {/* Private Routes */}
-        <Route
-          path="/user/account"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PrivateRoute
-                element={<ProfilePage />}
-                redirectTo="/user/signin"
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/cart"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PrivateRoute element={<CartPage />} redirectTo="/user/signin" />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PrivateRoute
-                element={<CheckoutPage />}
-                redirectTo="/user/signin"
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/orders"
-          element={
-            <Suspense fallback={<Loader />}>
-              <PrivateRoute
-                element={<OrderHistoryPage />}
-                redirectTo="/user/signin"
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/order/:id/details"
-          element={
-            <PrivateRoute
-              element={<OrderDetailsPage />}
-              redirectTo="/user/signin"
+            <PublicRoute
+              element={<LoginPage />}
+              restricted={true}
+              redirectTo="/home"
             />
           }
         />
 
-        {/* Fallback Route */}
+        <Route
+          path="/user/register"
+          element={
+            <PublicRoute
+              element={<RegisterPage />}
+              restricted={true}
+              redirectTo="/home"
+            />
+          }
+        />
+
+        {/* --- PRIVATE ROUTES --- */}
+        <Route
+          path="/user/account"
+          element={<PrivateRoute element={<ProfilePage />} />}
+        />
+
+        <Route path="/cart" element={<PrivateRoute element={<CartPage />} />} />
+
+        <Route
+          path="/checkout"
+          element={<PrivateRoute element={<CheckoutPage />} />}
+        />
+
+        <Route
+          path="/orders"
+          element={<PrivateRoute element={<OrderHistoryPage />} />}
+        />
+
+        <Route
+          path="/order/:id/details"
+          element={<PrivateRoute element={<OrderDetailsPage />} />}
+        />
+
+        {/* --- DEFAULT REDIRECT --- */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </>

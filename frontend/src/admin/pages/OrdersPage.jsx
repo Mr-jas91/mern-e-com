@@ -42,7 +42,6 @@ const OrdersPage = () => {
   const { adminOrders, adminOrderDetails, loading } = useSelector(
     (state) => state.orders
   );
-
   useEffect(() => {
     dispatch(getAdminOrders());
   }, [dispatch]);
@@ -112,9 +111,11 @@ const OrdersPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ color: "black" }}>Order ID</TableCell>
+                  <TableCell sx={{ color: "black" }}>Order Date</TableCell>
                   <TableCell sx={{ color: "black" }}>Customer Name</TableCell>
                   <TableCell sx={{ color: "black" }}>Order Value</TableCell>
                   <TableCell sx={{ color: "black" }}>Payment Method</TableCell>
+                  <TableCell sx={{ color: "black" }}>Status</TableCell>
                   <TableCell sx={{ color: "black" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -123,13 +124,21 @@ const OrdersPage = () => {
                   <TableRow key={order._id} hover>
                     <TableCell sx={{ color: "black" }}>{order._id}</TableCell>
                     <TableCell sx={{ color: "black" }}>
+                      {order?.createdAt}
+                    </TableCell>
+
+                    <TableCell sx={{ color: "black" }}>
                       {order.shippingAddress.fullName}
                     </TableCell>
                     <TableCell sx={{ color: "black" }}>
                       ₹{order.orderPrice.toFixed(2)}
                     </TableCell>
+
                     <TableCell sx={{ color: "black" }}>
                       {order.paymentMethod}
+                    </TableCell>
+                    <TableCell sx={{ color: "black" }}>
+                      ₹{order.orderItems[0].deliveryStatus}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -318,8 +327,7 @@ const OrdersPage = () => {
                             disabled={[
                               "ACCEPTED",
                               "SHIPPED",
-                              "DELIVERED",
-                              "CANCELLED"
+                              "DELIVERED"
                             ].includes(item.deliveryStatus)}
                           >
                             PENDING
@@ -343,14 +351,8 @@ const OrdersPage = () => {
                           >
                             Shipped
                           </MenuItem>
-                          <MenuItem
-                            value="DELIVERED"
-                            disabled={["DELIVERED", "CANCELLED"].includes(
-                              item.deliveryStatus
-                            )}
-                          >
-                            Delivered
-                          </MenuItem>
+                          <MenuItem value="DELIVERED">Delivered</MenuItem>
+                          <MenuItem value="CANCELLED">Cancel</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>

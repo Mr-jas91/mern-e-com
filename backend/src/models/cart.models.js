@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { Product } from "./product.models.js";
 const cartItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,

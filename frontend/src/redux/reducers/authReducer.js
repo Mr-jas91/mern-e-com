@@ -1,128 +1,217 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import isEqual from "lodash.isequal";
-import AuthService from "../../user/services/authServices";
-import {
-  AUTH_REGISTER,
-  AUTH_LOGIN,
-  AUTH_LOGOUT,
-  AUTH_GET_CURRENT_USER,
-  AUTH_GET_USER_PROFILE
-} from "../utils/actionTypes.js";
-// Reusable async thunk handler
-const createAsyncAction = (type, serviceFunction) => {
-  return createAsyncThunk(type, async (payload = null, { rejectWithValue }) => {
-    try {
-      const response = payload
-        ? await serviceFunction(payload)
-        : await serviceFunction();
-      console.log(type, response.data);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error?.response?.data || error.message);
-    }
-  });
+import authService from "../../user/services/authServices";
+
+// =========================================================
+// 1. DEFINE ASYNC THUNKS (Actions)
+// =========================================================
+
+const handleAsyncError = (error, rejectWithValue) => {
+  const errorMessage =
+    error.response?.data?.message || error.message || "Something went wrong";
+  return rejectWithValue({ message: errorMessage });
 };
 
-// Define async actions
-export const registerUser = createAsyncAction(
-  AUTH_REGISTER,
-  AuthService.register
-);
-export const loginUser = createAsyncAction(AUTH_LOGIN, AuthService.login);
+export const registerUser = createAsyncThunk("auth/register", async (formData, { rejectWithValue }) => {
+  try {
+    const response = await authService.register(formData);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
 
-// Logout User - Handled by AuthService
-export const logoutUser = createAsyncAction(AUTH_LOGOUT, AuthService.logout);
+export const loginUser = createAsyncThunk("auth/login", async (formData, { rejectWithValue }) => {
+  try {
+    const response = await authService.login(formData);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
 
-// Get Current User - Handled by AuthService
-export const getCurrentUser = createAsyncAction(
-  AUTH_GET_CURRENT_USER,
-  AuthService.getCurrentUser
-);
+export const logoutUser = createAsyncThunk("auth/logout", async (_, { rejectWithValue }) => {
+  try {
+    return await authService.logout();
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
 
-// get user profile
-export const getUserProfile = createAsyncAction(
-  AUTH_GET_USER_PROFILE,
-  AuthService.getUserProfile
-);
+export const getCurrentUser = createAsyncThunk("auth/getCurrentUser", async (_, { rejectWithValue }) => {
+  try {
+    const response = await authService.getCurrentUser();
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
 
-// Update user profile
-export const updateUserProfile = createAsyncAction(
-  "AUTH_UPDATE_USER_PROFILE",
-  AuthService.updateUserProfile
-);
+export const getUserProfile = createAsyncThunk("auth/getUserProfile", async (_, { rejectWithValue }) => {
+  try {
+    const response = await authService.getUserProfile();
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
 
-// Utility functions for state transitions
-const setLoadingState = (state) => {
+export const updateUserProfile = createAsyncThunk("auth/updateUserProfile", async (data, { rejectWithValue }) => {
+  try {
+    const response = await authService.updateUserProfile(data);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
+
+export const getAddresses = createAsyncThunk("auth/getAddresses", async (_, { rejectWithValue }) => {
+  try {
+    const response = await authService.getAddresses();
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
+
+export const addAddress = createAsyncThunk("auth/addAddress", async (data, { rejectWithValue }) => {
+  try {
+    const response = await authService.addAddress(data);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
+
+export const updateAddress = createAsyncThunk("auth/updateAddress", async (data, { rejectWithValue }) => {
+  try {
+    const response = await authService.updateAddress(data);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
+
+export const deleteAddress = createAsyncThunk("auth/deleteAddress", async (id, { rejectWithValue }) => {
+  try {
+    const response = await authService.deleteAddress(id);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error, rejectWithValue);
+  }
+});
+
+// =========================================================
+// 2. STATE HANDLERS (Modular Logic)
+// =========================================================
+
+const setLoading = (state) => {
   state.loading = true;
   state.error = null;
-  state.success = false;
 };
 
-const setErrorState = (state, action) => {
+const setAuthSuccess = (state, action) => {
   state.loading = false;
-  state.error = action.payload || "Something went wrong";
-  state.success = false;
-};
-
-const setSuccessState = (state, action) => {
-  const newUserData = action.payload?.data?.user;
-  if (!isEqual(state.user, newUserData)) {
-    state.user = newUserData;
-  }
-  state.loading = false;
+  state.user = action.payload?.data || action.payload;
+  state.isAuthenticated = true;
   state.success = true;
   state.error = null;
 };
 
-const resetState = (state) => {
+const setProfileSuccess = (state, action) => {
   state.loading = false;
-  state.user = null;
-  state.success = false;
-  state.error = null;
+  state.profile = action.payload?.data?.user || action.payload?.data || action.payload;
+  state.success = true;
 };
 
-// Initial state
+const setAddressSuccess = (state, action) => {
+  state.loading = false;
+  state.address = action.payload?.data?.address || action.payload?.data || action.payload;
+  state.success = true;
+};
+
+const setAuthError = (state, action) => {
+  state.loading = false;
+  state.error = action.payload?.message || "Authentication failed";
+  // We only reset user if the error is from a core auth check
+  if (action.type.includes("getCurrentUser") || action.type.includes("login")) {
+    state.isAuthenticated = false;
+    state.user = null;
+  }
+};
+
+const handleLogout = (state) => {
+  state.user = null;
+  state.address = null;
+  state.profile = null;
+  state.isAuthenticated = false;
+  state.loading = false;
+  state.error = null;
+  state.success = false;
+};
+
+// =========================================================
+// 3. SLICE DEFINITION
+// =========================================================
+
 const initialState = {
   user: null,
+  address: null,
+  profile: null,
   loading: false,
+  error: null,
   success: false,
-  error: null
+  isAuthenticated: false,
 };
 
-// Authentication slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    clearAuthErrors: (state) => {
+      state.error = null;
+    },
+    resetSuccess: (state) => {
+      state.success = false;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(registerUser.pending, setLoadingState)
-      .addCase(registerUser.fulfilled, setSuccessState)
-      .addCase(registerUser.rejected, setErrorState);
+      // Refresh User
+      .addCase(getCurrentUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getCurrentUser.fulfilled, setAuthSuccess)
+      
+      // Profile
+      .addCase(getUserProfile.pending, setLoading)
+      .addCase(getUserProfile.fulfilled, setProfileSuccess)
+      .addCase(updateUserProfile.fulfilled, setProfileSuccess)
 
-    builder
-      .addCase(loginUser.pending, setLoadingState)
-      .addCase(loginUser.fulfilled, setSuccessState)
-      .addCase(loginUser.rejected, setErrorState);
+      // Address Actions
+      .addCase(getAddresses.pending, setLoading)
+      .addCase(getAddresses.fulfilled, setAddressSuccess)
+      .addCase(addAddress.fulfilled, setAddressSuccess)
+      .addCase(updateAddress.fulfilled, setAddressSuccess)
+      .addCase(deleteAddress.fulfilled, setAddressSuccess)
 
-    builder
-      .addCase(logoutUser.pending, setLoadingState)
-      .addCase(logoutUser.fulfilled, resetState)
-      .addCase(logoutUser.rejected, setErrorState);
+      // Logout
+      .addCase(logoutUser.fulfilled, handleLogout)
 
-    builder
-      .addCase(getCurrentUser.pending, setLoadingState)
-      .addCase(getCurrentUser.fulfilled, setSuccessState)
-      .addCase(getCurrentUser.rejected, setErrorState);
-    builder
-      .addCase(getUserProfile.pending, setLoadingState)
-      .addCase(getUserProfile.fulfilled, setSuccessState)
-      .addCase(getUserProfile.rejected, setErrorState);
-    builder
-      .addCase(updateUserProfile.pending, setLoadingState)
-      .addCase(updateUserProfile.fulfilled, setSuccessState)
-      .addCase(updateUserProfile.rejected, setErrorState);
-  }
+      // Matchers
+      .addMatcher(
+        (action) => [loginUser.pending.type, registerUser.pending.type].includes(action.type),
+        setLoading
+      )
+      .addMatcher(
+        (action) => [loginUser.fulfilled.type, registerUser.fulfilled.type].includes(action.type),
+        setAuthSuccess
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/rejected"),
+        setAuthError
+      );
+  },
 });
 
+export const { clearAuthErrors, resetSuccess } = authSlice.actions;
 export default authSlice.reducer;

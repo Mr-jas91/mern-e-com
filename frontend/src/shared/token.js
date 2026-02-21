@@ -9,7 +9,7 @@ export const getUserToken = () => {
   return localStorage.getItem("userAccessToken");
 };
 export const getUserRefreshToken = () => {
-  localStorage.getItem("userRefreshToken");
+ return localStorage.getItem("userRefreshToken");
 };
 export const clearUserToken = () => {
   localStorage.removeItem("userAccessToken");

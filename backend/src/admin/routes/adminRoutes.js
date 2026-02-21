@@ -31,7 +31,8 @@ import {
   getOrders,
   getOrderDetails,
   updateDeliveryStatus,
-  acceptOrderItem
+  acceptOrderItem,
+  recentOrders
 } from "../controller/orderController.js";
 
 // Product controller
@@ -84,6 +85,7 @@ router.route("/orders").get(verifyJWT, getOrders);
 router.route("/order/:id").get(verifyJWT, getOrderDetails);
 router.route("/updatedeliverystatus").post(verifyJWT, updateDeliveryStatus);
 router.route("/accept-order/:id").put(verifyJWT, acceptOrderItem);
+router.route("/recentOrders").get(verifyJWT, recentOrders);
 
 // Product routes
 router

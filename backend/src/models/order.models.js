@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { addressSchema } from "./user.models.js";
+// Reuse the address schema structure for consistency
 
 const orderItemSchema = new mongoose.Schema({
   productId: {
@@ -6,30 +8,26 @@ const orderItemSchema = new mongoose.Schema({
     ref: "Product",
     required: true
   },
+  // --- SNAPSHOT FIELDS (Crucial) ---
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  price: { type: Number, required: true },
+  discount: { type: Number, required: true },
+  // ---------------------------------
   quantity: {
     type: Number,
     required: true,
     min: 1
   },
-  deliveryStatus: {
+  status: {
     type: String,
-    enum: ["PENDING", "CANCELLED", "ACCEPTED", "SHIPPED", "DELIVERED"],
+    enum: ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"],
     default: "PENDING"
-  },
-  tracking: {
-    type: String,
-    required: false
   }
 });
 
-// Schema for the whole order
 const orderSchema = new mongoose.Schema(
   {
-    orderPrice: {
-      type: Number,
-      required: true,
-      min: [0, "Order price must be positive"]
-    },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -41,21 +39,31 @@ const orderSchema = new mongoose.Schema(
       validate: [arrayLimit, "{PATH} must have at least 1 order item"]
     },
     shippingAddress: {
-      type: Object,
+      type: addressSchema,
       required: true
     },
-    paymentMethod: {
+    orderValue: {
+      type: Number,
+      required: true,
+      min: [0, "Order price must be positive"]
+    },
+    paymentOption: {
       type: String,
       required: true,
-      enum: ["ONLINE_UPI", "DEBIT_CARD", "COD"],
+      enum: ["ONLINE", "COD"],
       default: "COD"
     },
     paymentStatus: {
       type: String,
       required: true,
-      enum: ["UNPAID", "PAID", "REFUNDED"],
-      default: "UNPAID"
+      enum: ["PENDING", "PAID", "REFUNDED", "FAILED"],
+      default: "PENDING"
+    },
+    // Store the Gateway ID (e.g., Razorpay/Stripe ID) for refunds/tracking
+    paymentLinkId: {
+      type: String
     }
+    // Main Order Status (Easier for filtering "Active" vs "Past" orders)
   },
   { timestamps: true }
 );

@@ -1,12 +1,6 @@
-import api from "../../shared/interceptor";
-import {
-  setUserToken,
-  setUserRefreshToken,
-  getUserRefreshToken,
-  clearBothUserToken
-} from "../../shared/token";
-import showToast from "../../shared/toastMsg/showToast";
-const AuthService = {
+import api from "../../shared/interceptor.js";
+import { setUserToken, setUserRefreshToken } from "../../shared/token.js";
+const authService = {
   register: async (formData) => {
     const response = await api.post("/register", formData);
     const { accessToken, refreshToken } = response?.data?.data;
@@ -22,45 +16,34 @@ const AuthService = {
     return response;
   },
   getCurrentUser: async () => {
-    const response = await api.get("/auth");
-    const { accessToken, refreshToken } = response?.data?.data;
-    setUserToken(accessToken);
-    setUserRefreshToken(refreshToken);
-    return response;
+    return await api.get("/auth");
   },
   getUserProfile: async () => {
-    const res = await api.get("/me");;
-    return res;
+    return await api.get("/me");
   },
   updateUserProfile: async (data) => {
-    const res = await api.put("/me", data);
-    return res;
+    return await api.put("/me", data);
   },
   logout: async () => {
     try {
-      const res = await api.get("/logout");
+      await api.get("/logout");
       showToast("success", "Logged out successfully!");
-      return res;
-    } catch (err) {
-      showToast("error", "Logged out failled!");
-      return err.response?.data || err.message || "Logout failed"; // Returning a user-friendly error message
     } finally {
-      clearBothUserToken(); // Ensure tokens are cleared in any case
+      clearBothUserToken();
     }
   },
-  refreshAccessToken: async () => {
-    try {
-      const refreshToken = getUserRefreshToken();
-      if (!refreshToken) throw new Error("No refresh token available");
-      const response = await api.post("/refresh-token", { refreshToken });
-      const { accessToken } = response.data;
-      setUserToken(accessToken);
-      return accessToken;
-    } catch (error) {
-      clearAllTokens();
-      throw new Error("Session expired. Please log in again.");
-    }
+  getAddresses: async () => {
+    return await api.get("/address");
+  },
+  addAddress: async (data) => {
+    return await api.post("/address", data);
+  },
+  updateAddress: async (id) => {
+    return await api.put(`/address/${id}`);
+  },
+  deleteAddress: async (id) => {
+    return await api.delete(`/address/${id}`);
   }
 };
 
-export default AuthService;
+export default authService;

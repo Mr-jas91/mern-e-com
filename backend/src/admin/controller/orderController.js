@@ -6,7 +6,7 @@ import { asyncHandler } from "../../utils/asyncHander.js";
 // GET all orders
 const getOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find().select(
-    "orderPrice paymentMethod shippingAddress.fullName"
+    "orderPrice orderItems paymentMethod shippingAddress.fullName"
   );
   if (!orders || orders.length === 0) {
     throw new ApiError(404, "No orders found");
@@ -19,9 +19,10 @@ const getOrderDetails = asyncHandler(async (req, res) => {
   const orderId = req.params.id;
   if (!orderId) throw new ApiError(400, "Order ID is required");
 
-  const order = await Order.findById(orderId)
-    .populate("customer")
-    .populate("orderItems.productId");
+  const order = await Order.findById(orderId).populate(
+    "orderItems.productId",
+    "name price discount"
+  );
 
   if (!order) throw new ApiError(404, "Order not found");
 
@@ -72,5 +73,75 @@ const acceptOrderItem = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, order));
 });
 
+const recentOrders = asyncHandler(async (req, res) => {
+  const now = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(now.getMonth() - 1);
+
+  // Aggregation pipeline
+  const stats = await Order.aggregate([
+    {
+      $facet: {
+        last10Orders: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 10 },
+          {
+            $lookup: {
+              from: "Users", // MongoDB collection name for your users
+              localField: "customer",
+              foreignField: "_id",
+              as: "customer"
+            }
+          },
+          { $unwind: "$customer" },
+          {
+            $project: {
+              orderPrice: 1,
+              paymentMethod: 1,
+              paymentStatus: 1,
+              createdAt: 1,
+              "customer.firstName": 1
+            }
+          }
+        ],
+
+        lastMonthStats: [
+          { $match: { createdAt: { $gte: oneMonthAgo } } },
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              totalAmount: { $sum: "$orderPrice" }
+            }
+          }
+        ],
+
+        pendingDeliveries: [
+          { $unwind: "$orderItems" },
+          { $match: { "orderItems.deliveryStatus": "PENDING" } },
+          { $count: "pendingCount" }
+        ]
+      }
+    }
+  ]);
+
+  res.status(200).json(
+    new ApiResponse(200, {
+      last10Orders: stats[0].last10Orders,
+      lastMonth: stats[0].lastMonthStats[0] || {
+        totalOrders: 0,
+        totalAmount: 0
+      },
+      pendingDeliveries: stats[0].pendingDeliveries[0]?.pendingCount || 0
+    })
+  );
+});
+
 // Export
-export { getOrders, getOrderDetails, updateDeliveryStatus, acceptOrderItem };
+export {
+  getOrders,
+  getOrderDetails,
+  updateDeliveryStatus,
+  acceptOrderItem,
+  recentOrders
+};

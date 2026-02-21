@@ -58,7 +58,7 @@ const getAdminOrderDetails = async (orderId) => {
  * @returns {Promise} - API response after status update.
  */
 const updateDeliveryStatus = async (payload) => {
-  console.log(payload)
+  console.log(payload);
   return await api.post(`/admin/updatedeliverystatus/`, payload);
 };
 
@@ -66,6 +66,9 @@ const acceptOrderItem = async (orderId, itemIndex) => {
   return await api.put(`/admin/accept-order/${orderId}`, { itemIndex });
 };
 
+const recentOrders = async () => {
+  return await api.get("/admin/recentOrders");
+};
 // Export all order-related services
 const orderServices = {
   createOrder,
@@ -75,7 +78,8 @@ const orderServices = {
   getAdminOrders,
   getAdminOrderDetails,
   updateDeliveryStatus,
-  acceptOrderItem,
+  recentOrders, 
+  acceptOrderItem
 };
 
 export default orderServices;

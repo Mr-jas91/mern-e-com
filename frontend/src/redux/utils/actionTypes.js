@@ -54,3 +54,9 @@ export const login_admin = "admin/login"; // Admin login
 export const logout_admin = "admin/logout"; // Admin logout
 export const admin_profile = "admin/profile"; // Get admin profile
 export const current_admin = "admin/currentAdmin"; // Get current logged-in admin
+
+// ==========================
+// ✅ Transection
+// ==========================
+
+export const get_transection = "transection";

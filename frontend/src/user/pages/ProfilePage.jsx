@@ -14,41 +14,25 @@ import {
   updateUserProfile
 } from "../../redux/reducers/authReducer";
 import showToast from "../../shared/toastMsg/showToast";
-import isEqual from "lodash.isequal";
-
+import Loader from "../../shared/Loader/Loader";
 const ProfilePage = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, profile, loading } = useSelector((state) => state.auth);
 
   const [userData, setUserData] = useState({});
   const [isEditing, setIsEditing] = useState(false);
-  const [localLoading, setLocalLoading] = useState(true);
 
-  const hasFetched = useRef(false);
-
+  // Fetch profile ONLY on initial mount
   useEffect(() => {
-    if (!hasFetched.current) {
-      const fetchData = async () => {
-        setLocalLoading(true);
-        try {
-          await dispatch(getUserProfile()).unwrap();
-        } catch (error) {
-          showToast("error", "Failed to fetch user profile");
-        } finally {
-          setLocalLoading(false);
-          hasFetched.current = true;
-        }
-      };
-      fetchData();
-    }
+    dispatch(getUserProfile());
   }, [dispatch]);
 
+  // Update userData when profile changes (no API call)
   useEffect(() => {
-    if (user && !isEqual(userData, user)) {
-      setUserData(user);
+    if (profile) {
+      setUserData(profile);
     }
-  }, [user]);
-
+  }, [profile]); // Only update when profile changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData((prevData) => ({ ...prevData, [name]: value }));
@@ -64,9 +48,8 @@ const ProfilePage = () => {
       showToast("error", "Failed to update profile");
     }
   };
-
-  if (localLoading) {
-    return <Typography align="center">Loading profile...</Typography>;
+  if (!profile) {
+    return <Loader />;
   }
 
   return (

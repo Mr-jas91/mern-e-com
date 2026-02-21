@@ -1,16 +1,8 @@
 import api from "../../shared/interceptor";
 
-const handleRequest = async (
-  method,
-  data = null,
-  url = "/cart",
-  config = {}
-) => {
+const handleRequest = async (method, url, data = null) => {
   try {
-    const response = await api[method](
-      url,
-      data ? { ...data, ...config } : config // Spread data correctly
-    );
+    const response = await api[method](url, data);
     return response.data;
   } catch (error) {
     console.error("API Error:", error.response?.data || error.message);
@@ -20,18 +12,24 @@ const handleRequest = async (
 
 const CartServices = {
   // Add product to cart
-  addToCart: (productId) => handleRequest("post", { productId }),
+  // Endpoint: POST /cart
+  addToCart: (productId) => 
+    handleRequest("post", "/cart", { productId }),
 
   // Get cart details
-  getCart: () => handleRequest("get"),
+  // Endpoint: GET /cart
+  getCart: () => 
+    handleRequest("get", "/cart"),
 
   // Update quantity of product in cart
-  updateCart: (arg) => handleRequest("put", arg),
+  // Endpoint: PUT /cart
+  updateQuantity: (payload) => 
+    handleRequest("put", "/cart", payload),
 
   // Remove product from cart
-  removeFromCart: (productId) => {
-    return handleRequest("delete", undefined, `/cart/${productId}`); // Correct url and remove unnecessary data
-  }
+  // Endpoint: DELETE /cart/:_id
+  removeFromCart: (itemId) => 
+    handleRequest("delete", `/cart/${itemId}`)
 };
 
 export default CartServices;

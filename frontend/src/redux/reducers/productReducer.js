@@ -1,186 +1,129 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import ProductServices from "../../shared/services/productServices.js";
-import {
-  fetchAllProducts as fetchProducts,
-  fetchProduct,
-  fetchByCategory,
-  add_Product,
-  add_Category,
-  AdminProducts,
-  updateProduct,
-  delete_Product
-} from "../utils/actionTypes.js";
+import ProductServices from "../../user/services/productService.js"; 
 
-// ✅ Utility function to create async thunk actions with consistent error handling
-const createAsyncAction = (type, serviceMethod) => {
-  return createAsyncThunk(type, async (arg, { rejectWithValue }) => {
+// --- Thunks ---
+const createThunk = (type, serviceCall) =>
+  createAsyncThunk(type, async (arg, { rejectWithValue }) => {
     try {
-      const response = await serviceMethod(arg); // Call API service method
-      return response.data; // Return the data on success
+      const response = await serviceCall(arg);
+      return response.data;
     } catch (error) {
-      // Return a rejected value with error message or data
       return rejectWithValue(error.response?.data || error.message);
     }
   });
-};
 
-// ✅ Category-related async thunk action
-export const addCategory = createAsyncAction(
-  add_Category,
-  ProductServices.addCategory
+export const fetchAllProducts = createThunk(
+  "products/fetchAll",
+  ProductServices.getAllProducts
+);
+export const fetchProductById = createThunk(
+  "products/fetchOne",
+  ProductServices.getProductById
+);
+export const fetchProductsByCategory = createThunk(
+  "products/fetchByCategory",
+  ProductServices.getProductsByCategory
+);
+export const fetchCategories = createThunk(
+  "products/fetchCategories",
+  ProductServices.getCategories
+);
+export const searchProducts = createThunk(
+  "products/search",
+  ProductServices.searchProducts
 );
 
-// ✅ Product-related async thunk actions
-export const addProduct = createAsyncAction(
-  add_Product,
+// Admin Thunks (Assuming they share the same slice)
+export const deleteProduct = createThunk(
+  "products/delete",
+  ProductServices.deleteProduct
+);
+export const addProduct = createThunk(
+  "products/add",
   ProductServices.addProduct
 );
 
-export const getAdminProducts = createAsyncAction(
-  AdminProducts,
-  ProductServices.getAdminProducts
-);
-
-export const updateProductDetails = createAsyncAction(
-  updateProduct,
-  ProductServices.updateProduct
-);
-export const deleteProduct = createAsyncAction(
-  delete_Product,
-  ProductServices.deleteProduct
-);
-
-export const fetchAllProducts = createAsyncAction(
-  fetchProducts,
-  ProductServices.getAllProducts
-);
-
-export const fetchProductById = createAsyncAction(
-  fetchProduct,
-  ProductServices.getProductById
-);
-
-export const fetchProductsByCategory = createAsyncAction(
-  fetchByCategory,
-  ProductServices.getProductByCategory
-);
-
-export const fetchCategories = createAsyncAction(
-  "products/fetchCategories", // Hardcoded action type
-  ProductServices.getCategory
-);
-
-// ✅ Initial state for the product slice
+// --- Slice ---
 const initialState = {
-  products: [], // List of all or filtered products
-  singleProduct: null, // For viewing/editing a specific product
-  categories: [], // List of product categories
-  loading: false, // Loading state for async actions
-  error: null, // Error message from failed actions
-  success: false // Tracks if the last operation was successful
+  products: [],
+  singleProduct: null,
+  categories: [],
+  loading: false,
+  error: null,
+  success: false
 };
 
-// ✅ Handle async action pending state
-const handlePending = (state) => {
-  state.loading = true;
-  state.error = null;
-  state.success = false;
-};
-
-// ✅ Handle async action fulfilled state and update specified key
-const handleFulfilled = (state, action, key) => {
-  state.loading = false;
-  state.success = true;
-  state[key] = action.payload?.data || action.payload;
-};
-
-// ✅ Handle async action rejected state
-const handleRejected = (state, action) => {
-  state.loading = false;
-  state.success = false;
-  state.error = action.payload;
-};
-
-// Create slice with reusable reducers
 const productSlice = createSlice({
   name: "products",
   initialState,
-  reducers: {},
+  reducers: {
+    clearProductErrors: (state) => {
+      state.error = null;
+      state.success = false;
+    }
+  },
   extraReducers: (builder) => {
     builder
-      // Add Category (no state update, just mark loading/success)
-      .addCase(addCategory.pending, handlePending)
-      .addCase(addCategory.fulfilled, (state) => {
+      // Fetch All
+      .addCase(fetchAllProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.success = true;
-        // No category list update — we expect caller to fetchCategories again if needed
+        state.products = action.payload?.products || action.payload || [];
       })
-      .addCase(addCategory.rejected, handleRejected)
 
-      // Add Product (no update to product list here)
-      .addCase(addProduct.pending, handlePending)
-      .addCase(addProduct.fulfilled, (state) => {
+      // Fetch One
+      .addCase(fetchProductById.fulfilled, (state, action) => {
         state.loading = false;
-        state.success = true;
-        // No update to products list — caller must dispatch fetchAllProducts manually
+        state.singleProduct = action.payload;
       })
-      .addCase(addProduct.rejected, handleRejected)
 
-      // Update Product (only update matching product if already present)
-      .addCase(updateProductDetails.pending, handlePending)
-      .addCase(updateProductDetails.fulfilled, (state, action) => {
+      // Search & Category Filter (Updates main list)
+      .addCase(searchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.success = true;
-        const updated = action.payload?.data || action.payload;
-        const index = state.products.findIndex((p) => p._id === updated._id);
-        if (index !== -1) {
-          state.products[index] = updated;
-        }
+        state.products = action.payload || [];
       })
-      .addCase(updateProductDetails.rejected, handleRejected)
+      .addCase(fetchProductsByCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.products = action.payload || [];
+      })
 
-      // Delete Product
-      .addCase(deleteProduct.pending, handlePending)
+      // Fetch Categories
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.loading = false;
+        state.categories = action.payload || [];
+      })
+
+      // --- ADMIN: Delete Product (Optimistic UI Update) ---
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
+        // Remove the deleted item from the list instantly
+        // Assuming action.meta.arg contains the deleted ID if payload doesn't return it
+        const deletedId = action.meta.arg;
+        state.products = state.products.filter((p) => p._id !== deletedId);
       })
-      .addCase(deleteProduct.rejected, handleRejected)
-      // Fetch admin products
-      .addCase(getAdminProducts.pending, handlePending)
-      .addCase(getAdminProducts.fulfilled, (state, action) =>
-        handleFulfilled(state, action, "products")
-      )
-      .addCase(getAdminProducts.rejected, handleRejected)
 
-      // Fetch All Products
-      .addCase(fetchAllProducts.pending, handlePending)
-      .addCase(fetchAllProducts.fulfilled, (state, action) =>
-        handleFulfilled(state, action, "products")
+      // --- Matchers ---
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("products/") &&
+          action.type.endsWith("/pending"),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        }
       )
-      .addCase(fetchAllProducts.rejected, handleRejected)
-
-      // Fetch Product by ID
-      .addCase(fetchProductById.pending, handlePending)
-      .addCase(fetchProductById.fulfilled, (state, action) =>
-        handleFulfilled(state, action, "singleProduct")
-      )
-      .addCase(fetchProductById.rejected, handleRejected)
-
-      // Fetch Products by Category
-      .addCase(fetchProductsByCategory.pending, handlePending)
-      .addCase(fetchProductsByCategory.fulfilled, (state, action) =>
-        handleFulfilled(state, action, "products")
-      )
-      .addCase(fetchProductsByCategory.rejected, handleRejected)
-
-      // Fetch Categories
-      .addCase(fetchCategories.pending, handlePending)
-      .addCase(fetchCategories.fulfilled, (state, action) =>
-        handleFulfilled(state, action, "categories")
-      )
-      .addCase(fetchCategories.rejected, handleRejected);
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("products/") &&
+          action.type.endsWith("/rejected"),
+        (state, action) => {
+          state.loading = false;
+          state.error =
+            action.payload?.message || action.payload || "Product Error";
+        }
+      );
   }
 });
 
+export const { clearProductErrors } = productSlice.actions;
 export default productSlice.reducer;

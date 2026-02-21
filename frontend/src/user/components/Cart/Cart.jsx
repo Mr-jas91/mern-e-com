@@ -5,7 +5,8 @@ import {
   IconButton,
   Typography,
   Stack,
-  Box
+  Box,
+  Avatar
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -17,71 +18,103 @@ import {
   updateCart,
   removeFromCart
 } from "../../../redux/reducers/cartReducer.js";
+import { useNavigate } from "react-router-dom";
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { loading } = useSelector((state) => state.cart);
 
-  const { name, price, discount } = item?.productId;
-  const { _id } = item;
+  // Destructuring for cleaner code
+  const { name, price, discount, images, _id: productId } = item?.productId || {};
+  const { _id: cartItemId, quantity } = item;
 
-  const handleQuantityChange = (action) => {
-    if (action === "increase" || (action === "decrease" && item?.quantity > 1)) {
-      dispatch(updateCart({ _id, action }));
+  const handleQuantityChange = (e, action) => {
+    e.stopPropagation(); // Prevents navigation to product page
+    if (
+      action === "increase" ||
+      (action === "decrease" && quantity > 1)
+    ) {
+      dispatch(updateCart({ _id: cartItemId, action }));
     }
   };
 
-  const handleRemoveItem = () => {
-    dispatch(removeFromCart(_id));
+  const handleRemoveItem = (e) => {
+    e.stopPropagation(); // Prevents navigation to product page
+    dispatch(removeFromCart(cartItemId));
   };
 
   return (
-    <ListItem sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
+    <ListItem
+      sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 2, 
+        py: 2, 
+        cursor: "pointer",
+        "&:hover": { bgcolor: "action.hover" } 
+      }}
+      onClick={() => navigate(`/product/${productId}`)}
+    >
+      {/* Product Image */}
+      <Avatar
+        src={images?.[0]}
+        variant="rounded"
+        sx={{ width: 64, height: 64 }}
+      />
+
       {/* Product Info */}
       <Box sx={{ flexGrow: 1 }}>
-        <Typography variant="h6" fontWeight="bold">
+        <Typography variant="subtitle1" fontWeight="bold">
           {name}
         </Typography>
         <Box display="flex" gap={1} alignItems="center">
-          <Typography
-            variant="body2"
-            sx={{
-              color: "error.main",
-              textDecoration: "line-through"
-            }}
-          >
-           ₹{(price * item?.quantity).toFixed(2)}
-          </Typography>
+          {discount > 0 && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                textDecoration: "line-through"
+              }}
+            >
+              ₹{(price * quantity).toFixed(2)}
+            </Typography>
+          )}
           <Typography
             variant="body1"
             sx={{
-              color: "green",
+              color: "success.main",
               fontWeight: "bold"
             }}
           >
-           Final Price ₹{((price - discount) * item?.quantity).toFixed(2)}
+            ₹{((price - discount) * quantity).toFixed(2)}
           </Typography>
         </Box>
       </Box>
 
       {/* Quantity Controls */}
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack 
+        direction="row" 
+        alignItems="center" 
+        spacing={1} 
+        sx={{ mr: 4 }} // Space for the Delete icon
+      >
         <IconButton
-          onClick={() => handleQuantityChange("decrease")}
+          onClick={(e) => handleQuantityChange(e, "decrease")}
           size="small"
-          disabled={loading || item?.quantity <= 1}
+          disabled={loading || quantity <= 1}
         >
-          <RemoveIcon />
+          <RemoveIcon fontSize="small" />
         </IconButton>
         <Typography variant="body1" fontWeight="bold">
-          {item?.quantity}
+          {quantity}
         </Typography>
         <IconButton
-          onClick={() => handleQuantityChange("increase")}
+          onClick={(e) => handleQuantityChange(e, "increase")}
           size="small"
           disabled={loading}
         >
-          <AddIcon />
+          <AddIcon fontSize="small" />
         </IconButton>
       </Stack>
 

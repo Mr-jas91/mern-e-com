@@ -9,6 +9,7 @@ const PrivateRoute = ({ element, redirectTo }) => {
   const { admin, loading, error } = useSelector((state) => state.admin);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const token = getAdminToken();
+  // console.log(admin)
   useEffect(() => {
     // 🟢 If token exists but admin is not in store, fetch user info
     if (token && !admin) {

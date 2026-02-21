@@ -1,26 +1,30 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const checkoutReducer = createSlice({
+const checkoutSlice = createSlice({
   name: "checkout",
   initialState: {
-    products: [],
+    selectedItems: [], 
+    shippingAddress: null,
+    step: 0 // Checkout step (0: Cart, 1: Address, 2: Payment)
   },
   reducers: {
-    ADD_TO_CHECKOUT: (_, action) => ({
-      products: action.payload,
-    }),
-    REMOVE_FROM_CHECKOUT: (state, action) => ({
-      ...state,
-      products: state.products.filter(
-        (product) => product._id !== action.payload
-      ),
-    }),
-    CLEAR_CHECKOUT: () => ({
-      products: [],
-    }),
-  },
+    addToCheckout: (state, action) => {
+      state.selectedItems = action.payload;
+    },
+    setShippingAddress: (state, action) => {
+      state.shippingAddress = action.payload;
+    },
+    nextStep: (state) => {
+      state.step += 1;
+    },
+    resetCheckout: (state) => {
+      state.selectedItems = [];
+      state.shippingAddress = null;
+      state.step = 0;
+    }
+  }
 });
 
-export const { ADD_TO_CHECKOUT, REMOVE_FROM_CHECKOUT, CLEAR_CHECKOUT } =
-  checkoutReducer.actions;
-export default checkoutReducer.reducer;
+export const { addToCheckout, setShippingAddress, nextStep, resetCheckout } =
+  checkoutSlice.actions;
+export default checkoutSlice.reducer;

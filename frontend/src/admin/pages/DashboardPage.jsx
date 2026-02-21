@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   CssBaseline,
@@ -12,100 +12,80 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  styled
+  Paper
 } from "@mui/material";
 import SidebarContent from "../components/Sidebar";
 import { MainContent } from "../utills/Style";
+import { useDispatch, useSelector } from "react-redux";
+import { recentOrders } from "../../redux/reducers/orderReducer";
+import Loader from "../../shared/Loader/Loader";
 
-const StatsCard = styled(Card)(({ theme }) => ({
-  flex: 1,
-  padding: theme.spacing(2),
-  backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows[3],
-  transition: "transform 0.2s",
-  "&:hover": {
-    transform: "scale(1.05)"
-  }
-}));
-
-// Stats Cards Component
-const StatsCards = () => {
-  const stats = [
-    { title: "Total Orders This Month", value: "350" },
-    { title: "Pending Orders", value: "15" },
-    { title: "Revenue This Month", value: "$12,450" }
-  ];
-
-  return (
-    <Box sx={{ display: "flex", gap: 3, mb: 4 }}>
-      {stats.map((stat, index) => (
-        <StatsCard key={index}>
-          <CardContent>
-            <Typography variant="h6" color="textSecondary">
-              {stat.title}
-            </Typography>
-            <Typography variant="h4" color="primary">
-              {stat.value}
-            </Typography>
-          </CardContent>
-        </StatsCard>
-      ))}
-    </Box>
-  );
-};
-
-// Recent Orders Table Component
-const RecentOrdersTable = () => {
-  const recentOrders = [
-    {
-      id: "#1001",
-      customer: "John Doe",
-      total: "$120.50",
-      status: "Completed"
-    },
-    { id: "#1002", customer: "Jane Smith", total: "$90.00", status: "Pending" },
-    {
-      id: "#1003",
-      customer: "David Johnson",
-      total: "$250.75",
-      status: "Shipped"
-    }
-  ];
-
-  return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        Recent Orders
+// Reusable Stat Card
+const StatCard = ({ title, value }) => (
+  <Card sx={{ flex: 1 }}>
+    <CardContent>
+      <Typography variant="h6" color="textSecondary">
+        {title}
       </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Order ID</TableCell>
-              <TableCell>Customer</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {recentOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
-                <TableCell>{order.customer}</TableCell>
-                <TableCell>{order.total}</TableCell>
-                <TableCell>{order.status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </>
-  );
-};
+      <Typography variant="h4" color="primary">
+        {value ?? 0}
+      </Typography>
+    </CardContent>
+  </Card>
+);
 
-// Main Dashboard Component
+// Reusable Table Component
+const OrdersTable = ({ orders }) => (
+  <TableContainer component={Paper}>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+            Order ID
+          </TableCell>
+          <TableCell sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+            Customer
+          </TableCell>
+          <TableCell sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+            Total
+          </TableCell>
+          <TableCell sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+            Status
+          </TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {orders?.length > 0 ? (
+          orders.map((order) => (
+            <TableRow key={order._id}>
+              <TableCell>{order._id}</TableCell>
+              <TableCell>{order.customer?.firstName || "N/A"}</TableCell>
+              <TableCell>{order.orderPrice}</TableCell>
+              <TableCell>{order.paymentStatus}</TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={4} align="center">
+              No recent orders found.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  </TableContainer>
+);
+
 const DashboardPage = () => {
+  const { recentOrder, loading } = useSelector((state) => state.orders);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(recentOrders());
+  }, [dispatch]);
+
+  if (loading) return <Loader />;
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -115,8 +95,28 @@ const DashboardPage = () => {
         <Typography variant="h4" gutterBottom sx={{ textAlign: "center" }}>
           Dashboard
         </Typography>
-        <StatsCards />
-        <RecentOrdersTable />
+
+        {/* Stats Cards */}
+        <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
+          <StatCard
+            title="Total Orders This Month"
+            value={recentOrder?.lastMonth?.totalOrders}
+          />
+          <StatCard
+            title="Pending Orders"
+            value={recentOrder?.pendingDeliveries}
+          />
+          <StatCard
+            title="Revenue This Month"
+            value={recentOrder?.lastMonth?.totalAmount}
+          />
+        </Box>
+
+        {/* Recent Orders Table */}
+        <Typography variant="h5" gutterBottom>
+          Recent Orders
+        </Typography>
+        <OrdersTable orders={recentOrder?.last10Orders} />
       </MainContent>
     </Box>
   );

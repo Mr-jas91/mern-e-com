@@ -1,165 +1,124 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import orderServices from "../../shared/services/orderServices";
-import {
-  create_Order,
-  get_Orders,
-  order_Details,
-  order_Cancel,
-  admin_orders,
-  admin_order_details,
-  admin_delivery_status
-} from "../utils/actionTypes";
+import orderServices from "../../user/services/orderService.js"; 
 
-// Initial state with user & admin sections separated
-const initialState = {
-  // User orders
-  myorders: [],
-  orderDetails: null,
-
-  // Admin orders
-  adminOrders: [],
-  adminOrderDetails: null,
-
-  // Common flags
-  loading: false,
-  success: false,
-  error: null
-};
-
-// Helper: creates async thunk with proper error handling
-const createAsyncAction = (type, serviceMethod) =>
-  createAsyncThunk(type, async (payload, { rejectWithValue }) => {
+// --- Async Thunks ---
+const createThunk = (type, serviceCall) =>
+  createAsyncThunk(type, async (arg, { rejectWithValue }) => {
     try {
-      const response = await serviceMethod(payload);
-      console.log(type, response.data);
-      return { type, data: response.data };
+      const response = await serviceCall(arg);
+      return response.data; // Return just the data object
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Something went wrong"
-      );
+      return rejectWithValue(error.response?.data || error.message);
     }
   });
 
-// USER THUNKS
-export const createOrder = createAsyncAction(
-  create_Order,
+// User Actions
+export const createOrder = createThunk(
+  "orders/createOrder",
   orderServices.createOrder
 );
-export const getOrders = createAsyncAction(
-  get_Orders,
+export const getMyOrders = createThunk(
+  "orders/getMyOrders",
   orderServices.getMyOrders
 );
-export const getOrderDetails = createAsyncAction(
-  order_Details,
-  orderServices.getOrderDetails
+export const getOrderDetails = createThunk("orders/getOrderDetails", (args) =>
+  orderServices.getOrderDetails(args.id, args.itemId)
 );
-export const cancelOrder = createAsyncAction(
-  order_Cancel,
-  orderServices.cancelOrder
+export const cancelOrder = createThunk("orders/cancelOrder", (args) =>
+  orderServices.cancelOrder(args.id, args.itemId)
 );
 
-// ADMIN THUNKS
-export const getAdminOrders = createAsyncAction(
-  admin_orders,
+// Admin Actions
+// Note: Ensure you have adminServices or these methods exist in your orderServices
+export const getAdminOrders = createThunk(
+  "orders/getAdminOrders",
   orderServices.getAdminOrders
 );
-export const getAdminOrderDetails = createAsyncAction(
-  admin_order_details,
+export const getAdminOrderDetails = createThunk(
+  "orders/getAdminOrderDetails",
   orderServices.getAdminOrderDetails
 );
-export const updateDeliveryStatus = createAsyncAction(
-  admin_delivery_status,
+export const updateDeliveryStatus = createThunk(
+  "orders/updateDeliveryStatus",
   orderServices.updateDeliveryStatus
 );
-export const acceptOrderItemThunk = createAsyncAction(
-  "admin_accept_order",
-  orderServices.acceptOrderItem
-);
 
-// Common reducer handlers
-const handlePending = (state) => {
-  state.loading = true;
-  state.error = null;
-  state.success = false;
+// --- Slice ---
+const initialState = {
+  myOrders: [],
+  currentOrder: null, // For details view
+  adminOrders: [],
+  recentOrders: [],
+  loading: false,
+  error: null,
+  success: false,
+  orderCreated: false // Specific flag for redirecting after checkout
 };
 
-const handleFulfilled = (state, action) => {
-  console.log(state, action.payload.data);
-  state.loading = false;
-  state.success = true;
-  state.error = null;
-  const data = action.payload.data;
-  const type = action.payload.type;
-  switch (type) {
-    // USER
-    case get_Orders:
-      state.myorders = data?.data?.orders || [];
-      break;
-
-    case order_Details:
-    case order_Cancel:
-      state.orderDetails = data?.data || null;
-      break;
-
-    // ADMIN
-    case admin_orders:
-      state.adminOrders = data?.data || [];
-      break;
-
-    case admin_order_details:
-      state.adminOrderDetails = data?.data || null;
-      break;
-
-    case admin_delivery_status:
-      // Optionally update adminOrderDetails or mark as delivered
-      break;
-
-    default:
-      break;
-  }
-};
-
-const handleRejected = (state, action) => {
-  state.loading = false;
-  state.success = false;
-  state.error = action.payload;
-};
-
-// Slice creation
 const orderSlice = createSlice({
   name: "orders",
   initialState,
   reducers: {
-    setOrderDetails: (state, action) => {
-      state.orderDetails = action.payload;
-    },
-    resetOrderState: (state) => {
-      state.loading = false;
+    resetOrderFlags: (state) => {
       state.success = false;
+      state.orderCreated = false;
       state.error = null;
     }
   },
   extraReducers: (builder) => {
-    const allThunks = [
-      createOrder,
-      getOrders,
-      getOrderDetails,
-      cancelOrder,
-      getAdminOrders,
-      getAdminOrderDetails,
-      updateDeliveryStatus,
-      acceptOrderItemThunk
-    ];
+    builder
+      // 1. Create Order
+      .addCase(createOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orderCreated = true; // Trigger for redirect
+        // Optionally append to myOrders if needed immediately
+      })
 
-    allThunks.forEach((thunkAction) => {
-      builder
-        .addCase(thunkAction.pending, handlePending)
-        .addCase(thunkAction.fulfilled, handleFulfilled)
-        .addCase(thunkAction.rejected, handleRejected);
-    });
+      // 2. Get My Orders
+      .addCase(getMyOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myOrders = action.payload?.orders || action.payload || [];
+      })
+
+      // 3. Get Details / Cancel Order (Updates current view)
+      .addCase(getOrderDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentOrder = action.payload;
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        // Update the specific order in the list if it exists
+        if (state.currentOrder) state.currentOrder = action.payload;
+      })
+
+      // 4. Admin Cases
+      .addCase(getAdminOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.adminOrders = action.payload || [];
+      })
+
+      // --- Matchers for Loading/Error ---
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("orders/") && action.type.endsWith("/pending"),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("orders/") &&
+          action.type.endsWith("/rejected"),
+        (state, action) => {
+          state.loading = false;
+          state.error =
+            action.payload?.message || action.payload || "Order Error";
+        }
+      );
   }
 });
 
-// Export actions and reducer
-export const { setOrderDetails, resetOrderState } = orderSlice.actions;
+export const { resetOrderFlags } = orderSlice.actions;
 export default orderSlice.reducer;

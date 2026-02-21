@@ -5,209 +5,153 @@ import { Cart } from "../../models/cart.models.js";
 import { Product } from "../../models/product.models.js";
 import { User } from "../../models/user.models.js";
 // Calculate total cart amount
-const calculateTotalPrice = async (cart) => {
-  if (!cart?.items?.length) {
-    return {
-      totalPrice: 0,
-      discount: 0,
-      finalPrice: 0
-    };
+const calculateTotalPriceOptimized = async (cart, currentProduct = null) => {
+  if (!cart.items.length) {
+    return { totalPrice: 0, discount: 0, finalPrice: 0 };
   }
 
-  const productIds = cart.items
-    .map((item) => item?.productId?._id || item?.productId)
-    .filter(Boolean);
-  if (!productIds.length) {
-    return {
-      totalPrice: 0,
-      discount: 0,
-      finalPrice: 0
-    };
-  }
+  // Identify which product details we need to fetch
+  const currentProductId = currentProduct?._id?.toString();
+  const productIdsToFetch = cart.items
+    .map((item) => item.productId._id?.toString() || item.productId.toString())
+    .filter((id) => id !== currentProductId);
 
-  const products = await Product.find({ _id: { $in: productIds } }).select(
-    "price discount"
-  );
+  // Fetch only the products not already provided in 'currentProduct'
+  const otherProducts = await Product.find({ _id: { $in: productIdsToFetch } })
+    .select("price discount")
+    .lean();
 
-  const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+  const productMap = new Map(otherProducts.map((p) => [p._id.toString(), p]));
+  if (currentProduct) productMap.set(currentProductId, currentProduct);
 
   let totalPrice = 0;
-  let discount = 0;
+  let totalDiscount = 0;
 
   for (const item of cart.items) {
-    const product = productMap.get(
-      item?.productId?._id?.toString() || item?.productId?.toString()
-    );
-    if (!product || !item.quantity) continue;
-
-    totalPrice += product.price * item.quantity;
-    discount += product.discount * item.quantity;
+    const pId = item.productId._id?.toString() || item.productId.toString();
+    const p = productMap.get(pId);
+    if (p) {
+      totalPrice += p.price * item.quantity;
+      totalDiscount += (p.discount || 0) * item.quantity;
+    }
   }
 
-  const finalPrice = totalPrice - discount;
-
   return {
-    totalPrice: parseFloat(totalPrice.toFixed(2)),
-    discount: parseFloat(discount.toFixed(2)),
-    finalPrice: parseFloat(finalPrice.toFixed(2))
+    totalPrice: Number(totalPrice.toFixed(2)),
+    discount: Number(totalDiscount.toFixed(2)),
+    finalPrice: Number((totalPrice - totalDiscount).toFixed(2))
   };
 };
-
-// Add item to cart
+// 1. ADD TO CART
 const addToCart = asyncHandler(async (req, res) => {
   const { productId } = req.body;
   const userId = req.user._id;
 
-  const product = await Product.findById(productId);
-  if (!product) {
-    return res.status(404).json(new ApiError(404, "Product not found"));
-  }
+  const [cart, product] = await Promise.all([
+    Cart.findOne({ userId }),
+    Product.findById(productId).select("price discount stock").lean()
+  ]);
 
-  let cart = await Cart.findOne({ userId }).select(
-    "items totalPrice discount finalPrice"
+  if (!product) throw new ApiError(404, "Product not found");
+  if (product.stock < 1) throw new ApiError(400, "Out of stock");
+
+  let activeCart = cart || new Cart({ userId, items: [] });
+
+  const itemIndex = activeCart.items.findIndex(
+    (i) => i.productId.toString() === productId
   );
-  if (!cart) {
-    cart = new Cart({ userId, items: [] });
-  }
-
-  const itemIndex = cart.items.findIndex(
-    (item) =>
-      item?.productId?._id?.toString() === productId ||
-      item?.productId?.toString() === productId
-  );
-
   if (itemIndex > -1) {
-    cart.items[itemIndex].quantity += 1;
+    activeCart.items[itemIndex].quantity += 1;
   } else {
-    cart.items.push({ productId, quantity: 1 });
+    activeCart.items.push({ productId, quantity: 1 });
   }
 
-  const priceDetails = await calculateTotalPrice(cart);
-  cart.totalPrice = priceDetails.totalPrice;
-  cart.discount = priceDetails.discount;
-  cart.finalPrice = priceDetails.finalPrice;
+  const prices = await calculateTotalPriceOptimized(activeCart, product);
+  Object.assign(activeCart, prices);
 
-  await cart.save();
+  await activeCart.save();
 
-  // Add productId to user's cart history or wishlist etc.
-  const user = await User.findById(userId);
-  if (!user.cart.includes(productId)) {
-    user.cart.push(productId);
-  }
-  await user.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, activeCart, "Added to cart"));
+});
+
+// 2. GET CART
+const getCart = asyncHandler(async (req, res) => {
+  let cart = await Cart.findOne({ userId: req.user._id })
+    .populate("items.productId", "name price images discount")
+    .lean();
+
+  if (!cart) cart = { items: [], totalPrice: 0, finalPrice: 0, discount: 0 };
 
   return res.status(200).json(new ApiResponse(200, cart));
 });
 
-
-// Get cart for the user
-const getCart = asyncHandler(async (req, res) => {
-  let cart = await Cart.findOne({ userId: req.user._id })
-    .populate("items.productId", "name price images discount")
-    .select("items totalPrice finalPrice discount");
-  if (!cart) {
-    cart = new Cart({ userId: req.user._id, items: [] });
-  }
-  res.status(200).json(new ApiResponse(200, cart));
-});
-
-// Update quantity of a product in the cart
+// 3. UPDATE QUANTITY
 const updateQuantity = asyncHandler(async (req, res) => {
   const { _id, action } = req.body;
   const userId = req.user._id;
 
-  if (!["increase", "decrease"].includes(action)) {
-    return res.status(400).json(new ApiError(400, "Invalid action type"));
+  const cart = await Cart.findOne({ userId, "items._id": _id });
+  if (!cart) throw new ApiError(404, "Item not found in cart");
+
+  const item = cart.items.id(_id);
+  if (action === "decrease" && item.quantity < 1) {
+    throw new ApiError(400, "Minimum quantity is 1");
   }
 
-  // Fetch the specific item in cart
-  const cart = await Cart.findOne(
-    { userId, "items._id": _id },
-    { "items.$": 1 }
+  item.quantity += action === "increase" ? 1 : -1;
+
+  // Recalculate using our optimized helper
+  const prices = await calculateTotalPriceOptimized(cart);
+  Object.assign(cart, prices);
+
+  await cart.save();
+  // Return populated for frontend immediate update
+  const populatedCart = await cart.populate(
+    "items.productId",
+    "name price images discount"
   );
 
-  if (!cart || !cart.items.length) {
-    return res.status(404).json(new ApiError(404, "Cart or product not found"));
-  }
-
-  const currentQuantity = cart.items[0].quantity;
-  if (action === "decrease" && currentQuantity <= 1) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "Quantity cannot be less than 1"));
-  }
-
-  const updateOperation =
-    action === "increase"
-      ? { $inc: { "items.$.quantity": 1 } }
-      : { $inc: { "items.$.quantity": -1 } };
-
-  const updatedCart = await Cart.findOneAndUpdate(
-    { userId, "items._id": _id },
-    updateOperation,
-    { new: true }
-  ).populate("items.productId", "name price images discount");
-
-  if (!updatedCart) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "Cart not found after update"));
-  }
-
-  // ✅ Recalculate all prices
-  const priceDetails = await calculateTotalPrice(updatedCart);
-  updatedCart.totalPrice = priceDetails.totalPrice;
-  updatedCart.discount = priceDetails.discount;
-  updatedCart.finalPrice = priceDetails.finalPrice;
-  await updatedCart.save();
-
-  return res.status(200).json(new ApiResponse(200, updatedCart));
+  return res.status(200).json(new ApiResponse(200, populatedCart));
 });
 
-// Remove product from cart
+// 4. REMOVE FROM CART
 const removeFromCart = asyncHandler(async (req, res) => {
-  const { productId } = req.params;
+  const { _id } = req.params; // Item sub-doc ID
   const userId = req.user._id;
 
-  let cart = await Cart.findOne({ userId })
-    .populate("items.productId", "name price images discount")
-    .select("items totalPrice discount finalPrice");
+  // 1. Atomic Pull: Remove the item and get the updated cart in one trip
+  // We use populate here so we have the prices immediately for recalculation
+  const cart = await Cart.findOneAndUpdate(
+    { userId },
+    { $pull: { items: { _id } } },
+    { new: true }
+  ).populate("items.productId", "name images price discount");
 
-  if (!cart) {
-    throw new ApiError(404, "Cart not found");
-  }
+  if (!cart) throw new ApiError(404, "Cart not found");
 
-  const itemIndex = cart.items.findIndex(
-    (item) => item._id.toString() === productId
-  );
+  // 2. Optimized Calculation
+  // Since 'cart' is already populated, our helper doesn't need to call Product.find() at all!
+  let totalPrice = 0;
+  let totalDiscount = 0;
 
-  if (itemIndex === -1) {
-    throw new ApiError(404, "Product not found in cart");
-  }
+  cart.items.forEach((item) => {
+    const p = item.productId; // This is the populated product object
+    if (p) {
+      totalPrice += p.price * item.quantity;
+      totalDiscount += (p.discount || 0) * item.quantity;
+    }
+  });
 
-  // Get the productId before removal
-  const removedItemProductId = cart.items[itemIndex].productId._id.toString();
+  // 3. Final Update: Save the new totals
+  cart.totalPrice = Number(totalPrice.toFixed(2));
+  cart.discount = Number(totalDiscount.toFixed(2));
+  cart.finalPrice = Number((totalPrice - totalDiscount).toFixed(2));
 
-  // ❌ Remove item
-  cart.items.splice(itemIndex, 1);
-
-  // ✅ Recalculate prices
-  const priceDetails = await calculateTotalPrice(cart);
-  cart.totalPrice = priceDetails.totalPrice;
-  cart.discount = priceDetails.discount;
-  cart.finalPrice = priceDetails.finalPrice;
-
-  // ✅ Remove productId from user's cart tracking (if used)
-  const user = await User.findById(userId);
-  user.cart = user.cart.filter(
-    (item) => item._id.toString() !== removedItemProductId
-  );  
-
-  await user.save();
   await cart.save();
 
-  res.status(200).json(new ApiResponse(200, cart));
+  return res.status(200).json(new ApiResponse(200, cart, "Item removed"));
 });
-
 
 export { addToCart, getCart, updateQuantity, removeFromCart };

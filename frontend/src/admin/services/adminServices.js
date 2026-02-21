@@ -1,5 +1,9 @@
 import api from "../../shared/interceptor";
-import { setAdminToken, setAdminRefreshToken } from "../../shared/token";
+import {
+  setAdminToken,
+  setAdminRefreshToken,
+  getAdminToken
+} from "../../shared/token";
 
 const AdminServices = {
   register: async (formData) => {
@@ -20,7 +24,7 @@ const AdminServices = {
     return await api.get("/admin/logout");
   },
   getCurrentAdmin: async () => {
-    const token = localStorage.getItem("adminToken"); // or getAdminToken()
+    const token = getAdminToken(); // or getAdminToken()
     if (!token) {
       // simulate reject in thunk
       throw new Error("No token available");
@@ -31,7 +35,7 @@ const AdminServices = {
     setAdminRefreshToken(refreshToken);
     return res;
   },
-  
+
   adminProfile: async () => {
     return await api.get("/admin/profile");
   }

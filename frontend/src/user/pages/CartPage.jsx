@@ -13,12 +13,12 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import Cart from "../components/Cart/Cart";
 import { getCart } from "../../redux/reducers/cartReducer";
-import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer";
+import { addToCheckout } from "../../redux/reducers/checkoutReducer";
 
 export default function CartPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { cartItems } = useSelector((state) => state.cart);
+  const { cart } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
   // Fetch cart details when the page loads (on refresh)
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function CartPage() {
   // Handle checkout process
   const handleCheckout = () => {
     if (user) {
-      dispatch(ADD_TO_CHECKOUT(cartItems?.items));
+      dispatch(addToCheckout(cart?.items));
       navigate("/checkout");
     } else {
       navigate("/user/signin");
@@ -38,7 +38,7 @@ export default function CartPage() {
   };
 
   // Show empty cart message
-  if (!cartItems?.items?.length) {
+  if (!cart?.items?.length) {
     return (
       <Container maxWidth="md" sx={{ textAlign: "center", mt: 4 }}>
         <Typography variant="h6">Your cart is empty.</Typography>
@@ -54,7 +54,7 @@ export default function CartPage() {
 
       {/* Cart Items List */}
       <List>
-        {cartItems?.items?.map((item) => (
+        {cart?.items?.map((item) => (
           <React.Fragment key={item._id}>
             <Cart item={item} />
             <Divider />
@@ -76,13 +76,13 @@ export default function CartPage() {
                 variant="body1"
                 sx={{ textDecoration: "line-through", color: "text.secondary" }}
               >
-                ₹{(cartItems?.totalPrice ?? 0).toFixed(2)}
+                ₹{(cart?.totalPrice ?? 0).toFixed(2)}
               </Typography>
             </Box>
             <Box display="flex" justifyContent="space-between" mt={1}>
               <Typography variant="body1">Discount:</Typography>
               <Typography variant="body1" color="error">
-                - ₹{(cartItems?.discount ?? 0).toFixed(2)}
+                - ₹{(cart?.discount ?? 0).toFixed(2)}
               </Typography>
             </Box>
             <Divider sx={{ my: 2 }} />
@@ -91,7 +91,7 @@ export default function CartPage() {
                 Final Price:
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                ₹{(cartItems?.finalPrice ?? 0).toFixed(2)}
+                ₹{(cart?.finalPrice ?? 0).toFixed(2)}
               </Typography>
             </Box>
           </Paper>

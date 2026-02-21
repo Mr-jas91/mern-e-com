@@ -20,7 +20,7 @@ import { ShoppingCart, LocalShipping, CheckCircle } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProductById } from "../../redux/reducers/productReducer.js";
 import { addToCart } from "../../redux/reducers/cartReducer.js";
-import { ADD_TO_CHECKOUT } from "../../redux/reducers/checkoutReducer.js";
+import { addToCheckout } from "../../redux/reducers/checkoutReducer.js";
 import Loader from "../../shared/Loader/Loader.jsx";
 
 const ProductLandingPage = () => {
@@ -61,10 +61,12 @@ const ProductLandingPage = () => {
   };
 
   const handleBuyNow = () => {
-    dispatch(ADD_TO_CHECKOUT([{ productId: product, quantity: 1 }]));
+    dispatch(addToCheckout([{ productId: product, quantity: 1 }]));
     navigate("/checkout");
   };
-
+  const discountPercentage = Math.round(
+    (product.discount / product.price) * 100
+  );
   return (
     <Container maxWidth="lg">
       <Grid container spacing={4} sx={{ my: 4 }}>
@@ -125,11 +127,11 @@ const ProductLandingPage = () => {
               ₹{product?.price.toFixed(2)}
             </Typography>
             <Typography variant="h5" color="error">
-            ₹{(product.price - product.discount).toFixed(2)}
+              ₹{(product.price - product.discount).toFixed(2)}
             </Typography>
             <Chip
-              label={`${product?.discount.toFixed(2)}% OFF`}
-              color="error"
+              label={`${discountPercentage.toFixed(0)}% OFF`}
+              color="success"
               size="small"
               sx={{ ml: 2 }}
             />

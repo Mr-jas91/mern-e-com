@@ -1,86 +1,107 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import cartServices from "../../user/services/cartServices.js";
-import {
-  add_ToCart,
-  get_Cart,
-  update_Cart,
-  remove_FromCart
-} from "../utils/actionTypes.js";
 
-// Utility to create async thunks
-const createAsyncAction = (type, serviceMethod) =>
-  createAsyncThunk(type, async (arg, { rejectWithValue }) => {
+// --- Async Thunks ---
+export const addToCart = createAsyncThunk(
+  "cart/addToCart",
+  async (arg, { rejectWithValue }) => {
     try {
-      const response = await serviceMethod(arg);
-      return response.data;
+      return await cartServices.addToCart(arg);
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
-  });
-
-// Async actions
-export const addToCart = createAsyncAction(add_ToCart, cartServices.addToCart);
-export const getCart = createAsyncAction(get_Cart, cartServices.getCart);
-export const updateCart = createAsyncAction(
-  update_Cart,
-  cartServices.updateCart
-);
-export const removeFromCart = createAsyncAction(
-  remove_FromCart,
-  cartServices.removeFromCart
+  }
 );
 
+export const getCart = createAsyncThunk(
+  "cart/getCart",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await cartServices.getCart();
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const updateCart = createAsyncThunk(
+  "cart/updateCart",
+  async (arg, { rejectWithValue }) => {
+    try {
+      return await cartServices.updateQuantity(arg); // Renamed service method to updateQuantity if needed
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const removeFromCart = createAsyncThunk(
+  "cart/removeFromCart",
+  async (arg, { rejectWithValue }) => {
+    try {
+      return await cartServices.removeFromCart(arg);
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// --- Slice ---
 const initialState = {
-  cartItems: [],
+  cart: null, 
   loading: false,
   error: null,
-  notification: null
-};
-
-// State handlers
-const handlePending = (state) => {
-  state.loading = true;
-  state.error = null;
-};
-
-const handleFulfilled = (state, action) => {
-  state.loading = false;
-  state.cartItems = action.payload?.data || action.payload;
-};
-
-const handleRejected = (state, action) => {
-  state.loading = false;
-  state.error = action.payload;
+  success: false
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    clearCart: (state) => {
-      state.cartItems = [];
-      state.totalPrice = 0;
-    },
-    resetCartNotification: (state) => {
-      state.notification = null;
+    clearCartState: (state) => {
+      state.cart = null;
+      state.loading = false;
+      state.error = null;
+      state.success = false;
     }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(addToCart.pending, handlePending)
-      .addCase(addToCart.fulfilled, handleFulfilled)
-      .addCase(addToCart.rejected, handleRejected)
-      .addCase(getCart.pending, handlePending)
-      .addCase(getCart.fulfilled, handleFulfilled)
-      .addCase(getCart.rejected, handleRejected)
-      .addCase(updateCart.pending, handlePending)
-      .addCase(updateCart.fulfilled, handleFulfilled)
-      .addCase(updateCart.rejected, handleRejected)
-      .addCase(removeFromCart.pending, handlePending)
-      .addCase(removeFromCart.fulfilled, handleFulfilled)
-      .addCase(removeFromCart.rejected, handleRejected);
+      // Handle all "Pending" states together
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("cart/") && action.type.endsWith("/pending"),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+          state.success = false;
+        }
+      )
+      // Handle all "Rejected" states together
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("cart/") && action.type.endsWith("/rejected"),
+        (state, action) => {
+          state.loading = false;
+          state.error =
+            action.payload?.message || action.payload || "Cart Error";
+          state.success = false;
+        }
+      )
+      // Handle "Fulfilled" states (They all return the updated Cart object)
+      .addMatcher(
+        (action) =>
+          action.type.startsWith("cart/") && action.type.endsWith("/fulfilled"),
+        (state, action) => {
+          state.loading = false;
+          // Backend returns { success: true, data: { items: [], totalPrice: ... } }
+          state.cart = action.payload?.data || action.payload;
+          state.success = true;
+          state.error = null;
+        }
+      );
   }
 });
 
-export const { clearCart, resetCartNotification } = cartSlice.actions;
+export const { clearCartState } = cartSlice.actions;
 export default cartSlice.reducer;

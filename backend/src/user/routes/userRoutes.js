@@ -9,14 +9,20 @@ import {
   logoutUser,
   getCurrentUser,
   getUserProfile,
-  updateUserDetails
+  updateUserDetails,
+  refreshAccessToken,
+  addAddress,
+  updateAddress,
+  getAddress,
+  deleteAddress
 } from "../controller/userController.js";
 // Product controller
 import {
   getProducts,
   getProductDetails,
   getProductDetailsByCategory,
-  getCategory
+  getCategory,
+  searchProducts
 } from "../controller/productAndCategory.js";
 //order controller
 import {
@@ -39,6 +45,8 @@ import {
   removeFromWishlist,
   getWishlist
 } from "../controller/wishlistController.js";
+// Webhook controller
+import { razorpayWebhook } from "../controller/webhookController.js";
 
 //Authentication and user API
 router.route("/register").post(createUser);
@@ -49,28 +57,33 @@ router
   .route("/me")
   .get(verifyJWT, getUserProfile)
   .put(verifyJWT, updateUserDetails);
-
+router.route("/address").get(verifyJWT, getAddress).post(verifyJWT, addAddress);
+router
+  .route("/address/:addressId")
+  .put(verifyJWT, updateAddress)
+  .delete(verifyJWT, deleteAddress);
+router.route("/refresh-token").get(refreshAccessToken);
 // Products and category API
+router.route("/products/categories").get(getCategory);
+router.route("/products/category/:categoryId").get(getProductDetailsByCategory);
+router.route("/product/search").get(searchProducts);
 router.route("/products").get(getProducts);
 router.route("/product/:id").get(getProductDetails);
-router.route("/products/category/:categoryId").get(getProductDetailsByCategory);
-router.route("/products/categories").get(getCategory);
-
 //Order API
 router.route("/createorder").post(verifyJWT, createOrder);
 router.route("/myorders").get(verifyJWT, getUserOrderHistory);
 router
-  .route("/myorder/:orderId")
+  .route("/myorder/:orderId/:orderItemId")
   .get(verifyJWT, getOrderDetails)
   .put(verifyJWT, cancelOrder);
 
 //Cart API
 router
   .route("/cart")
-  .post(verifyJWT, addToCart)
   .get(verifyJWT, getCart)
+  .post(verifyJWT, addToCart)
   .put(verifyJWT, updateQuantity);
-router.route("/cart/:productId").delete(verifyJWT, removeFromCart);
+router.route("/cart/:_id").delete(verifyJWT, removeFromCart);
 
 // Wishlist API
 router
@@ -78,4 +91,6 @@ router
   .post(verifyJWT, addToWishlist)
   .get(verifyJWT, getWishlist)
   .delete(verifyJWT, removeFromWishlist);
+// Webhook API
+router.route("/webhook").post(razorpayWebhook);
 export default router;

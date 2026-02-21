@@ -5,29 +5,48 @@ import {
   CardContent,
   Typography,
   Button,
-  Box
+  Box,
+  Chip
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../../../redux/reducers/cartReducer.js";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [added, setAdded] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+
+  // Helper: Format Currency
+  const formatPrice = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Calculations
+  const originalPrice = product?.price || 0;
+  const discount = product?.discount || 0;
+  const finalPrice = originalPrice - discount;
+  const discountPercentage = Math.round((discount / originalPrice) * 100);
 
   const handleAddToCart = (event) => {
-    event.stopPropagation();
+    event.stopPropagation(); // Stop card click event
     if (!user) {
       navigate("/user/signin");
-    } else {
-      dispatch(addToCart(product._id));
-      setAdded(true);
-
-      // Reset the "Added" state after 3 seconds
-      setTimeout(() => setAdded(false), 1500);
+      return;
     }
+
+    // Dispatch action
+    // NOTE: Passing object { productId } as standard convention
+    dispatch(addToCart(product._id));
+
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
   };
 
   return (
@@ -37,86 +56,122 @@ const ProductCard = ({ product }) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: 2,
-        borderRadius: 2,
-        boxShadow: 3,
-        transition: "transform 0.2s ease-in-out",
-        "&:hover": { transform: "scale(1.02)" }
+        borderRadius: 3,
+        position: "relative",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        transition: "transform 0.3s ease, box-shadow 0.3s ease",
+        "&:hover": {
+          transform: "translateY(-5px)",
+          boxShadow: "0 12px 20px rgba(0,0,0,0.1)"
+        },
+        cursor: "pointer"
       }}
       onClick={() => navigate(`/product/${product._id}`)}
     >
+      {/* Discount Badge */}
+      {discount > 0 && (
+        <Chip
+          label={`${discountPercentage}% OFF`}
+          color="error"
+          size="small"
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            fontWeight: "bold",
+            zIndex: 1
+          }}
+        />
+      )}
+
       {/* Image Section */}
       <Box
         sx={{
           width: "100%",
-          height: 220,
+          height: 240,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#f9f9f9",
-          borderRadius: 2,
-          overflow: "hidden"
+          bgcolor: "#fff",
+          p: 2
         }}
       >
         <CardMedia
           component="img"
-          image={product?.images?.[0] || "/placeholder.jpg"}
-          alt={product?.name || "Product Image"}
+          image={product?.images?.[0] || "https://via.placeholder.com/300"}
+          alt={product?.name}
           sx={{
             maxWidth: "100%",
             maxHeight: "100%",
-            objectFit: "cover",
-            transition: "opacity 0.3s ease-in-out",
-            "&:hover": { opacity: 0.9 }
+            objectFit: "contain", // Keeps the whole product visible
+            transition: "transform 0.3s ease",
+            "&:hover": { transform: "scale(1.05)" }
           }}
         />
       </Box>
 
       {/* Product Info */}
-      <CardContent sx={{ textAlign: "center", paddingBottom: "8px" }}>
+      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
         <Typography
-          variant="h6"
+          variant="subtitle1"
+          fontWeight={600}
+          title={product?.name}
           sx={{
-            fontWeight: 600,
-            fontSize: "1rem",
-            whiteSpace: "nowrap",
             overflow: "hidden",
-            textOverflow: "ellipsis"
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 2, // Limit to 2 lines
+            WebkitBoxOrient: "vertical",
+            lineHeight: 1.2,
+            mb: 1,
+            height: "2.4em" // Fixed height for alignment
           }}
         >
-          {product?.name || "Product Name"}
+          {product?.name}
         </Typography>
+
+        {/* Pricing */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="h6" color="primary" fontWeight={700}>
+            {formatPrice(finalPrice)}
+          </Typography>
+          {discount > 0 && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textDecoration: "line-through" }}
+            >
+              {formatPrice(originalPrice)}
+            </Typography>
+          )}
+        </Box>
       </CardContent>
 
-      {/* Price Section */}
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 1, mb: 1 }}>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ textDecoration: "line-through" }}
+      {/* Action Button */}
+      <Box sx={{ p: 2, pt: 0 }}>
+        <Button
+          variant="contained"
+          fullWidth
+          startIcon={!isAdded && <ShoppingCartIcon />}
+          sx={{
+            bgcolor: isAdded ? "#2e7d32" : "#1976d2",
+            color: "white",
+            py: 1.2,
+            fontWeight: "bold",
+            textTransform: "none",
+            "&:hover": {
+              bgcolor: isAdded ? "#1b5e20" : "#115293"
+            },
+            "&.Mui-disabled": {
+              bgcolor: "#e0e0e0",
+              color: "#9e9e9e"
+            }
+          }}
+          onClick={handleAddToCart}
         >
-          ₹{product?.price?.toFixed(2) || "0.00"}
-        </Typography>
-        <Typography variant="body2" color="primary" fontWeight={600}>
-          ₹{(product?.price - (product?.discount || 0)).toFixed(2)}
-        </Typography>
+          {isAdded ? "Added to Cart" : "Add to Cart"}
+        </Button>
       </Box>
-
-      {/* Add to Cart Button */}
-      <Button
-        variant="contained"
-        sx={{
-          width: "100%",
-          bgcolor: added ? "#4caf50" : "black",
-          color: "white",
-          fontWeight: "bold",
-          "&:hover": { bgcolor: added ? "#66bb6a" : "#424242" },
-          transition: "background 0.3s ease-in-out"
-        }}
-        onClick={handleAddToCart}
-      >
-        {added ? "Added!" : "Add to Cart"}
-      </Button>
     </Card>
   );
 };

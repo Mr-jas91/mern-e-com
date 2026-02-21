@@ -3,48 +3,51 @@ const productSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: true
     },
     description: {
       type: String,
-      required: true,
+      required: true
     },
     images: {
       type: Array,
-      required: true,
+      required: true
     },
     price: {
       type: Number,
       default: 0,
-      required: true,
+      required: true
     },
     discount: {
       type: Number,
-      default: 0,
+      default: 0
     },
     stock: {
       type: Number,
-      default: 0,
+      default: 0
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: true,
+      required: true
     },
     isFeatured: {
       type: Boolean,
-      default: false,
+      default: false
     },
     ratings: {
       type: Array,
-      default: [],
+      default: []
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
-      required: true,
-    },
+      required: true
+    }
   },
   { timestamps: true }
 );
+// product.model.js
+productSchema.index({ name: "text", description: "text" });
+
 export const Product = mongoose.model("Product", productSchema, "Products");

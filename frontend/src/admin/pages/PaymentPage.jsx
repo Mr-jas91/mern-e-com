@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Loader from "../../shared/Loader/Loader";
 import {
   Box,
   CssBaseline,
@@ -8,78 +9,92 @@ import {
   TableHead,
   TableRow,
   TableCell,
-  TableBody
+  TableBody,
+  TableContainer,
+  Paper,
 } from "@mui/material";
 import { MainContent } from "../utills/Style";
 import SidebarContent from "../components/Sidebar";
-
-/**
- * PaymentPage
- * -------------------------------------------------------------------------
- * Displays payment records with the following fields:
- *  • Order ID
- *  • Payment Method
- *  • Status (e.g., Paid, Failed, Refunded, Pending)
- *  • Date (ISO string or locale date)
- *  • Customer Name
- * -------------------------------------------------------------------------
- * Uses Material‑UI for styling and is responsive out of the box because it
- * relies on the flex-based layout already used across the admin pages.
- */
+import { getTransection } from "../../redux/reducers/transectionReducer";
+import { useDispatch, useSelector } from "react-redux";
 
 const PaymentPage = () => {
-  const payments = [
-    {
-      id: "pay1",
-      orderId: "ORD123456",
-      customerName: "John Doe",
-      paymentMethod: "Credit Card",
-      status: "Paid",
-      date: "2025-06-08"
-    },
-    {
-      id: "pay2",
-      orderId: "ORD123789",
-      customerName: "Jane Smith",
-      paymentMethod: "UPI",
-      status: "Pending",
-      date: "2025-06-09"
-    }
-  ];
+  const { transections, loading } = useSelector((state) => state.transections);
+  const dispatch = useDispatch();
+  const [payments, setPayments] = useState(null);
+
+  useEffect(() => {
+    dispatch(getTransection());
+  }, [dispatch]);
+
+  useEffect(() => {
+    setPayments(transections);
+  }, [transections]);
+
+  if (loading || payments === null) return <Loader />;
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", height: "100vh" }}> {/* Full viewport height */}
       <CssBaseline />
       <SidebarContent />
-      <MainContent>
+      <MainContent sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <Toolbar />
-        <Typography variant="h4" gutterBottom sx={{ textAlign: "center", color: "black" }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ textAlign: "center", color: "black" }}
+        >
           Payment Details
         </Typography>
 
-        <Box p={2}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ color: "black" }}>Order ID</TableCell>
-                <TableCell sx={{ color: "black" }}>Payment Method</TableCell>
-                <TableCell sx={{ color: "black" }}>Status</TableCell>
-                <TableCell sx={{ color: "black" }}>Date</TableCell>
-                <TableCell sx={{ color: "black" }}>Customer Name</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {payments.map((pay) => (
-                <TableRow key={pay.id}>
-                  <TableCell sx={{ color: "black" }}>{pay.orderId}</TableCell>
-                  <TableCell sx={{ color: "black" }}>{pay.paymentMethod}</TableCell>
-                  <TableCell sx={{ color: "black" }}>{pay.status}</TableCell>
-                  <TableCell sx={{ color: "black" }}>{pay.date}</TableCell>
-                  <TableCell sx={{ color: "black" }}>{pay.customerName}</TableCell>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2 }}>
+          <TableContainer
+            component={Paper}
+            sx={{
+              flex: 1, // takes remaining height
+              overflowX: "auto",
+              overflowY: "auto",
+              "&::-webkit-scrollbar": { height: 8, width: 8 },
+              "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc" },
+            }}
+          >
+            <Table stickyHeader sx={{ minWidth: 800 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ color: "black", whiteSpace: "nowrap" }}>Transection ID</TableCell>
+                  <TableCell sx={{ color: "black" }}>Amount</TableCell>
+                  <TableCell sx={{ color: "black", whiteSpace: "nowrap" }}>Order ID</TableCell>
+                  <TableCell sx={{ color: "black", whiteSpace: "nowrap" }}>Payment Method</TableCell>
+                  <TableCell sx={{ color: "black" }}>Status</TableCell>
+                  <TableCell sx={{ color: "black", whiteSpace: "nowrap" }}>Date</TableCell>
+                  <TableCell sx={{ color: "black", whiteSpace: "nowrap" }}>Customer Name</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {payments.map((pay) => (
+                  <TableRow key={pay._id}>
+                    <TableCell sx={{ color: "black" }}>
+                      {pay.transectionId}
+                    </TableCell>
+                    <TableCell sx={{ color: "black" }}>{pay.amount}</TableCell>
+                    <TableCell sx={{ color: "black" }}>{pay.order}</TableCell>
+                    <TableCell sx={{ color: "black" }}>
+                      {pay.paymentmethod}
+                    </TableCell>
+                    <TableCell sx={{ color: "black" }}>
+                      {pay.paymentStatus}
+                    </TableCell>
+                    <TableCell sx={{ color: "black" }}>
+                      {pay.transectionDate}
+                    </TableCell>
+                    <TableCell sx={{ color: "black" }}>
+                      {pay.user?.firstName}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
       </MainContent>
     </Box>
