@@ -3,10 +3,12 @@ const categorySchema = mongoose.Schema(
   {
     name: {
       type: String,
-      requied: true,
+      required: true,
       unique: true,
+      trim: true
     },
   },
-  { timestapms: true }
+  { timestamps: true }
 );
+
 export const Category = mongoose.model("Category", categorySchema, "Category");

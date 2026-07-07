@@ -7,11 +7,10 @@ import Loader from "../../shared/Loader/Loader"
 
 const OrderHistoryPage = () => {
   const dispatch = useDispatch();
-  const { myorders, loading } = useSelector((state) => state.orders);
+  const { myOrders, loading } = useSelector((state) => state.orders);
   useEffect(() => {
     dispatch(getMyOrders());
   }, [dispatch]);
-
   if (loading) {
     return <Loader />;
   }
@@ -21,15 +20,16 @@ const OrderHistoryPage = () => {
       <Typography variant="h4" component="h1" gutterBottom sx={{ my: 4 }}>
         Order History
       </Typography>
-      {Array.isArray(myorders) && myorders.length > 0 ? (
-        myorders.map(
-          (orders) =>
-            Array.isArray(orders?.orderItems) &&
-            orders?.orderItems.map((item) => (
+      {Array.isArray(myOrders) && myOrders.length > 0 ? (
+        myOrders.map(
+          (order) =>
+            Array.isArray(order?.orderItems) &&
+            order?.orderItems.map((item) => (
               <OrderProductCard
-                key={item?._id || item?.productId?._id} // Ensuring key is always unique
-                orderDate={orders?.createdAt}
+                key={item?._id} // Ensuring key is always unique
+                orderDate={order?.createdAt}
                 orderDetails={item}
+                orderId={order._id}
               />
             ))
         )

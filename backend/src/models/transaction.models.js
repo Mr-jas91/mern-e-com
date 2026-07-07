@@ -12,12 +12,11 @@ const transactionSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
-    paymentmethod: {
+    paymentMethod: {
       type: String,
       enum: ["ONLINE", "COD"],
       required: true
     },
-    // FIX: Standardized Enum to match Order Model
     paymentStatus: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED", "REFUNDED"], 
@@ -26,16 +25,15 @@ const transactionSchema = new mongoose.Schema(
     },
     paymentLinkId: {
       type: String,
-      // FIX: Sparse true zaruri hai, taaki COD orders (jaha linkId null hai) me unique error na aaye
       unique: true,
       sparse: true 
     },
     razorpayPaymentId: {
       type: String
     },
-    transactionDate: { // Spelling Fixed
+    transactionDate: { 
       type: Date,
-      default: Date.now, // FIX: Default value de di taaki controller me baar baar na likhna pade
+      default: Date.now, 
       required: true
     },
     amount: {
@@ -46,4 +44,4 @@ const transactionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const Transaction = mongoose.model("Transaction", transactionSchema);
+export const Transaction = mongoose.model("Transaction", transactionSchema,"Transactions");

@@ -13,17 +13,12 @@ const COOKIE_OPTIONS = {
 
 // --- REUSABLE HELPERS ---
 
-/**
- * Generates tokens and saves refresh token to DB
- * Optimization: Pass the user object directly to avoid extra findById calls
- */
 const generateAccessAndRefreshTokens = async (user) => {
   try {
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
-    // DB Call 1: Saving token
     await user.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
@@ -32,19 +27,16 @@ const generateAccessAndRefreshTokens = async (user) => {
   }
 };
 
-/**
- * Sends tokens via cookies and returns sanitized user response
- * Optimization: Uses .toObject() to clean sensitive data without extra DB fetch
- */
 const sendTokenResponse = async (user, statusCode, res, message) => {
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user
-  );
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user);
 
-  // Security: Convert to JS object and delete sensitive fields locally
+  // Security & Response Customization: 
   const loggedInUser = user.toObject();
   delete loggedInUser.password;
   delete loggedInUser.refreshToken;
+  delete loggedInUser.addresses; // 
+  delete loggedInUser.isActive;
+
   return res
     .status(statusCode)
     .cookie("userAccessToken", accessToken, COOKIE_OPTIONS)
@@ -75,7 +67,7 @@ const createUser = asyncHandler(async (req, res) => {
 
   if (existedUser) {
     const conflict = existedUser.email === email ? "email" : "phone";
-    throw new ApiError(409, `User with this ${conflict} already exists`);
+    throw new ApiError(409, `User with this ${conflict} already exists, Please Login`);
   }
 
   const user = await User.create({
@@ -85,17 +77,16 @@ const createUser = asyncHandler(async (req, res) => {
     email,
     password
   });
-  // Convert to JS object and remove sensitive/heavy fields
-  const userResponse = user.toObject();
-  delete userResponse.addresses; // addresses exclude karna
-  delete userResponse.isActive; // isActive exclude karna
+
   return sendTokenResponse(
-    userResponse,
+    user, 
     201,
     res,
     "User registered successfully"
   );
 });
+
+export default createUser;
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, phone, password } = req.body;
@@ -104,10 +95,25 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // DB Call: Fetch user
   const user = await User.findOne({
-    $or: [{ email: email }, { phone: phone }]
+    $or: [{
+      $and: [{ email: { $ne: "" } },
+      { email: { $ne: null } },
+      { email: { $ne: undefined } },
+      { email: email }
+      ]
+    }, {
+      $and: [{ phone: { $ne: "" } },
+      { phone: { $ne: null } },
+      { phone: { $ne: undefined } },
+      { phone: phone }
+      ]
+    }]
   }).select("-isActive -addresses");
-
-  if (!user || !(await user.isPasswordCorrect(password))) {
+  console.log("user", user)
+  if (!user) {
+    throw new ApiError(404, "User does not exits!")
+  }
+  if (!(await user.isPasswordCorrect(password))) {
     throw new ApiError(401, "Invalid credentials");
   }
   return sendTokenResponse(user, 200, res, "Logged in successfully");

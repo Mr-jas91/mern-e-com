@@ -21,12 +21,13 @@ const RegisterPage = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    phone:"",
     email: "",
     password: "",
     confirmPassword: ""
   });
 
-  const { firstName, lastName, email, password, confirmPassword } = formData;
+  const { firstName, lastName,phone, email, password, confirmPassword } = formData;
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -50,6 +51,7 @@ const RegisterPage = () => {
     try {
       // Dispatch the register action
       const res = await dispatch(registerUser(formData));
+      console.log(res)
       if (res.payload?.success) {
         showToast("success", "Successfully registered!");
         setFormData({
@@ -61,7 +63,7 @@ const RegisterPage = () => {
         });
         navigate("/home"); // Redirect to home after successful registration
       } else {
-        showToast("error", res.payload?.data || "Registration failed.");
+        showToast("error", res.payload?.message || "Registration failed.");
       }
     } catch (error) {
       showToast("error", error?.message || "Something went wrong!");
@@ -70,7 +72,7 @@ const RegisterPage = () => {
 
   // Redirect to login page
   const handleLoginRedirect = () => {
-    navigate("/user/login");
+    navigate("/user/signin");
   };
 
   return (
@@ -101,6 +103,18 @@ const RegisterPage = () => {
                 name="lastName"
                 label="Last Name"
                 value={lastName}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                required
+                fullWidth
+                id="Mob No"
+                name="phone"
+                label="Mobile Number"
+                type="Number"
+                value={phone}
                 onChange={handleChange}
               />
             </Grid>

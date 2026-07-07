@@ -19,7 +19,6 @@ const PrivateRoute = ({ element, redirectTo = "/user/signin" }) => {
       dispatch(getCurrentUser())
         .unwrap()
         .catch(() => {
-            // If token is invalid, it will be handled here or in interceptor
         })
         .finally(() => setIsChecking(false));
     } else {

@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import logger from 'redux-logger';
+import { logger } from 'redux-logger'; 
 import authReducer from "./reducers/authReducer.js";
 import productReducer from "./reducers/productReducer.js";
 import cartReducer from "./reducers/cartReducer.js";
@@ -17,14 +17,13 @@ const store = configureStore({
     admin: adminReducer,
     transections: transectionReducer
   },
-  
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ["auth/login/fulfilled", "auth/logout/fulfilled"],
         ignoredPaths: ["auth.payload.headers"]
       }
-    }).concat(logger)
+    }).concat(logger) 
 });
 
 export default store;

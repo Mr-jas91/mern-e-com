@@ -15,6 +15,7 @@ const AdminServices = {
   },
   login: async (formData) => {
     const res = await api.post("/admin/login", formData);
+    console.log(res)
     const { accessToken, refreshToken } = res.data?.data;
     setAdminToken(accessToken);
     setAdminRefreshToken(refreshToken);

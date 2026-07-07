@@ -62,7 +62,7 @@ router
   .route("/address/:addressId")
   .put(verifyJWT, updateAddress)
   .delete(verifyJWT, deleteAddress);
-router.route("/refresh-token").get(refreshAccessToken);
+router.route("/refresh-token").post(refreshAccessToken);
 // Products and category API
 router.route("/products/categories").get(getCategory);
 router.route("/products/category/:categoryId").get(getProductDetailsByCategory);

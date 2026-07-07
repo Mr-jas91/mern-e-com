@@ -36,7 +36,9 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await dispatch(loginAdmin(formData));
-      if (res.payload.success) {
+      console.log(res);
+      
+      if (res?.payload?.success) {
         showToast("success", "Successfully logged in!");
         setFormData({
           email: "",

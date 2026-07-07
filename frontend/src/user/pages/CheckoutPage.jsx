@@ -49,9 +49,13 @@ export default function CheckoutPage() {
   });
 
   // 1. Fetch Addresses on Mount
-  useEffect(() => {
-    dispatch(getAddresses());
-  }, [dispatch]);
+useEffect(() => {
+  console.log("🟢 CheckoutPage MOUNTED - Dispatching getAddresses");
+  dispatch(getAddresses());
+  return () => {
+    console.log("🔴 CheckoutPage UNMOUNTED");
+  };
+}, [dispatch]);
 
   // 2. Set Initial Selected Address (FIXES INFINITE LOOP)
   useEffect(() => {
@@ -59,14 +63,14 @@ export default function CheckoutPage() {
       const defaultAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
       setSelectedAddress(defaultAddr);
     }
-  }, [savedAddresses, selectedAddress]);
+  }, [savedAddresses]);
 
   // 3. Redirect if cart is empty
   useEffect(() => {
     if (!products || products.length === 0) {
       navigate("/home");
     }
-  }, [products, navigate]);
+  }, [products]);
 
   // 4. Calculations Memo
   const totals = useMemo(() => {
@@ -74,7 +78,7 @@ export default function CheckoutPage() {
     const itemDiscount = products.reduce((sum, item) => sum + (item.productId.discount || 0) * item.quantity, 0);
     const shipping = subtotal > 1000 ? 0 : 50; // Free shipping over 1000
     const finalPrice = subtotal - itemDiscount - couponDiscount + shipping;
-    
+
     return { subtotal, itemDiscount, shipping, finalPrice };
   }, [products, couponDiscount]);
 
@@ -89,10 +93,12 @@ export default function CheckoutPage() {
   };
 
   const handleSaveAddress = async () => {
-    const result = await dispatch(addAddress(newAddress));
-    if (addAddress.fulfilled.match(result)) {
+    try {
+      await dispatch(addAddress(newAddress)).unwrap();
       setOpenDialog(false);
       showToast("success", "Address added successfully");
+    } catch (error) {
+      showToast("error", "Failed to add address");
     }
   };
 
@@ -127,51 +133,93 @@ export default function CheckoutPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Grid container spacing={4}>
-        
+
         {/* LEFT SIDE: Address & Items */}
         <Grid item xs={12} md={8}>
           <Typography variant="h5" fontWeight="bold" mb={3}>Checkout</Typography>
-          
+
           {/* Address Section */}
-          <Paper elevation={0} sx={{ p: 3, mb: 3, border: "1px solid #e0e0e0", borderRadius: 2 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 3,
+              border: "1px solid #e0e0e0",
+              borderRadius: 2,
+            }}
+          >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6">Delivery Address</Typography>
+
               {savedAddresses?.length > 0 && (
-                <Button size="small" onClick={() => setShowAllAddresses(!showAllAddresses)}>
+                <Button
+                  size="small"
+                  onClick={() => setShowAllAddresses(!showAllAddresses)}
+                >
                   {showAllAddresses ? "Close" : "Change Address"}
                 </Button>
               )}
             </Box>
 
-            {addressLoading ? <Skeleton variant="rectangular" height={60} /> : (
-              !savedAddresses || savedAddresses.length === 0 ? (
-                <Button variant="outlined" fullWidth onClick={() => setOpenDialog(true)}>
-                  + Add New Address to Continue
-                </Button>
-              ) : (
-                <Box>
-                  {!showAllAddresses ? (
-                    <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
-                      <Typography fontWeight="bold">{selectedAddress?.city}</Typography>
-                      <Typography variant="body2">{selectedAddress?.address}, {selectedAddress?.state}</Typography>
-                      <Typography variant="body2">Phone: {selectedAddress?.phone}</Typography>
-                    </Box>
-                  ) : (
-                    <Stack spacing={2}>
-                      {savedAddresses.map((addr) => (
-                        <Paper 
-                          key={addr._id} 
-                          variant="outlined" 
-                          sx={{ p: 2, cursor: "pointer", borderColor: selectedAddress?._id === addr._id ? "primary.main" : "#e0e0e0" }}
-                          onClick={() => { setSelectedAddress(addr); setShowAllAddresses(false); }}
-                        >
-                          <Typography fontWeight="bold">{addr.address}</Typography>
-                          <Typography variant="body2">{addr.city}, {addr.state} - {addr.pincode}</Typography>
-                        </Paper>
-                      ))}
-                      <Button onClick={() => setOpenDialog(true)}>+ Add Another Address</Button>
-                    </Stack>
-                  )
+            {addressLoading ? (
+              <Skeleton variant="rectangular" height={60} />
+            ) : !savedAddresses || savedAddresses.length === 0 ? (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setOpenDialog(true)}
+              >
+                + Add New Address to Continue
+              </Button>
+            ) : (
+              <Box>
+                {!showAllAddresses ? (
+                  <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                    <Typography fontWeight="bold">
+                      {selectedAddress?.city}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      {selectedAddress?.address}, {selectedAddress?.state}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      Phone: {selectedAddress?.phone}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={2}>
+                    {savedAddresses.map((addr) => (
+                      <Paper
+                        key={addr._id}
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          cursor: "pointer",
+                          borderColor:
+                            selectedAddress?._id === addr._id
+                              ? "primary.main"
+                              : "#e0e0e0",
+                        }}
+                        onClick={() => {
+                          setSelectedAddress(addr);
+                          setShowAllAddresses(false);
+                        }}
+                      >
+                        <Typography fontWeight="bold">
+                          {addr.address}
+                        </Typography>
+
+                        <Typography variant="body2">
+                          {addr.city}, {addr.state} - {addr.pincode}
+                        </Typography>
+                      </Paper>
+                    ))}
+
+                    <Button onClick={() => setOpenDialog(true)}>
+                      + Add Another Address
+                    </Button>
+                  </Stack>
                 )}
               </Box>
             )}
@@ -192,7 +240,7 @@ export default function CheckoutPage() {
         <Grid item xs={12} md={4}>
           <Paper elevation={3} sx={{ p: 3, borderRadius: 2, position: "sticky", top: 20 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>Order Summary</Typography>
-            
+
             <Stack spacing={2} sx={{ my: 3 }}>
               <Box display="flex" justifyContent="space-between">
                 <Typography color="text.secondary">Total Items Cost</Typography>
@@ -223,10 +271,10 @@ export default function CheckoutPage() {
 
             {/* Coupon Code Input */}
             <Box display="flex" gap={1} mb={3}>
-              <TextField 
-                size="small" 
-                fullWidth 
-                placeholder="Promo Code" 
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Promo Code"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
               />
@@ -235,13 +283,13 @@ export default function CheckoutPage() {
 
             <Typography variant="subtitle2" mb={1}>Payment Method</Typography>
             <Stack direction="row" spacing={2} mb={3}>
-              <Button 
-                fullWidth 
+              <Button
+                fullWidth
                 variant={paymentOption === "COD" ? "contained" : "outlined"}
                 onClick={() => setPaymentOption("COD")}
               >COD</Button>
-              <Button 
-                fullWidth 
+              <Button
+                fullWidth
                 variant={paymentOption === "ONLINE" ? "contained" : "outlined"}
                 onClick={() => setPaymentOption("ONLINE")}
               >Online</Button>
@@ -267,42 +315,42 @@ export default function CheckoutPage() {
         <DialogTitle>Add New Shipping Address</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField 
-              label="Street Address" 
-              fullWidth 
-              onChange={(e) => setNewAddress({...newAddress, address: e.target.value})} 
+            <TextField
+              label="Street Address"
+              fullWidth
+              onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
             />
             <Box display="flex" gap={2}>
-              <TextField 
-                label="City" 
-                fullWidth 
-                onChange={(e) => setNewAddress({...newAddress, city: e.target.value})} 
+              <TextField
+                label="City"
+                fullWidth
+                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
               />
-              <TextField 
-                select 
-                label="State" 
-                fullWidth 
+              <TextField
+                select
+                label="State"
+                fullWidth
                 value={newAddress.state}
-                onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
               >
                 {INDIAN_STATES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
               </TextField>
             </Box>
             <Box display="flex" gap={2}>
-              <TextField 
-                label="Pincode" 
-                fullWidth 
-                onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})} 
+              <TextField
+                label="Pincode"
+                fullWidth
+                onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
               />
               <TextField label="Country" fullWidth value="India" disabled />
             </Box>
-            <TextField 
-              label="Phone Number" 
-              fullWidth 
-              onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})} 
+            <TextField
+              label="Phone Number"
+              fullWidth
+              onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
             />
             <FormControlLabel
-              control={<Checkbox onChange={(e) => setNewAddress({...newAddress, isDefault: e.target.checked})} />}
+              control={<Checkbox onChange={(e) => setNewAddress({ ...newAddress, isDefault: e.target.checked })} />}
               label="Set as default address"
             />
           </Stack>
@@ -313,5 +361,5 @@ export default function CheckoutPage() {
         </DialogActions>
       </Dialog>
     </Container>
-  );
+  )
 }

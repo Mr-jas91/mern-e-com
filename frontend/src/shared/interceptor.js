@@ -31,28 +31,52 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Agar 401 error hai aur humne abhi tak retry nahi kiya hai
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Skip refresh/login APIs
+    if (
+      originalRequest.url?.includes("/refresh-token") ||
+      originalRequest.url?.includes("/login")
+    ) {
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
+
+      const refreshToken = getUserRefreshToken();
+
+      if (!refreshToken) {
+        clearBothUserToken();
+        window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
       try {
-        const refreshToken = getUserRefreshToken();
-        // Naya access token lene ke liye direct axios use karein (api instance nahi, warna loop ban jayega)
         const res = await axios.post(
           `${import.meta.env.VITE_API_URL}/refresh-token`,
           { refreshToken }
         );
 
-        const { accessToken } = res.data.data;
+        const accessToken = res?.data?.data?.accessToken;
+
         setUserToken(accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return api(originalRequest); // Request dubara bhejien
-      } catch (refreshError) {
+
+        return api(originalRequest);
+      } catch (err) {
         clearBothUserToken();
-        window.location.href = "/login"; // Force Logout
-        return Promise.reject(refreshError);
+        window.location.href = "/login";
+        return Promise.reject(err);
       }
     }
+
     return Promise.reject(error);
   }
 );

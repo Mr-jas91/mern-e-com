@@ -122,9 +122,12 @@ const setProfileSuccess = (state, action) => {
   state.profile = action.payload?.data?.user || action.payload?.data || action.payload;
   state.success = true;
 };
-
+const setAddressLoading = (state, action) => {
+  state.addressLoading = true;
+  state.error = null
+}
 const setAddressSuccess = (state, action) => {
-  state.loading = false;
+  state.addressLoading = false;
   state.address = action.payload?.data?.address || action.payload?.data || action.payload;
   state.success = true;
 };
@@ -156,6 +159,7 @@ const handleLogout = (state) => {
 const initialState = {
   user: null,
   address: null,
+  addressLoading: false,
   profile: null,
   loading: false,
   error: null,
@@ -181,14 +185,14 @@ const authSlice = createSlice({
         state.loading = true;
       })
       .addCase(getCurrentUser.fulfilled, setAuthSuccess)
-      
+
       // Profile
       .addCase(getUserProfile.pending, setLoading)
       .addCase(getUserProfile.fulfilled, setProfileSuccess)
       .addCase(updateUserProfile.fulfilled, setProfileSuccess)
 
       // Address Actions
-      .addCase(getAddresses.pending, setLoading)
+      .addCase(getAddresses.pending, setAddressLoading)
       .addCase(getAddresses.fulfilled, setAddressSuccess)
       .addCase(addAddress.fulfilled, setAddressSuccess)
       .addCase(updateAddress.fulfilled, setAddressSuccess)

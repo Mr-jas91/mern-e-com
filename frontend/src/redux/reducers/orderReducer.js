@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import orderServices from "../../user/services/orderService.js"; 
+import orderServices from "../../user/services/orderService.js";
 
 // --- Async Thunks ---
 const createThunk = (type, serviceCall) =>
   createAsyncThunk(type, async (arg, { rejectWithValue }) => {
     try {
       const response = await serviceCall(arg);
-      return response.data; // Return just the data object
+      return response?.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -22,10 +22,10 @@ export const getMyOrders = createThunk(
   orderServices.getMyOrders
 );
 export const getOrderDetails = createThunk("orders/getOrderDetails", (args) =>
-  orderServices.getOrderDetails(args.id, args.itemId)
+  orderServices.getOrderDetails(args.orderId, args.itemId)
 );
 export const cancelOrder = createThunk("orders/cancelOrder", (args) =>
-  orderServices.cancelOrder(args.id, args.itemId)
+  orderServices.cancelOrder(args.orderId, args.itemId)
 );
 
 // Admin Actions

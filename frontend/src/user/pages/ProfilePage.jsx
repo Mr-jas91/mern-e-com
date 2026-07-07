@@ -24,15 +24,17 @@ const ProfilePage = () => {
 
   // Fetch profile ONLY on initial mount
   useEffect(() => {
-    dispatch(getUserProfile());
+    const fetchAndSetProfile = async () => {
+      if (!profile) {
+        const data = await dispatch(getUserProfile()).unwrap();
+        setUserData(data);
+      } else {
+        setUserData(profile);
+      }
+    };
+    fetchAndSetProfile();
   }, [dispatch]);
 
-  // Update userData when profile changes (no API call)
-  useEffect(() => {
-    if (profile) {
-      setUserData(profile);
-    }
-  }, [profile]); // Only update when profile changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData((prevData) => ({ ...prevData, [name]: value }));
@@ -69,10 +71,10 @@ const ProfilePage = () => {
                     field === "firstName"
                       ? "First Name"
                       : field === "lastName"
-                      ? "Last Name"
-                      : field === "phone"
-                      ? "Phone Number"
-                      : "Address"
+                        ? "Last Name"
+                        : field === "phone"
+                          ? "Phone Number"
+                          : "Address"
                   }
                   name={field}
                   value={userData[field] || ""}

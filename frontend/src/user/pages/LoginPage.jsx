@@ -33,21 +33,26 @@ const LoginPage = () => {
 
   // Handle form submission (login)
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ब्राउज़र रिफ्रेश रोकता है
     try {
       const res = await dispatch(loginUser(formData));
-      if (res.payload.success) {
+      console.log("API Response:", res);
+      
+      // फ़िक्स: सुरक्षित चेकिंग (Optional Chaining) ताकि undefined होने पर कोड क्रैश न हो
+      if (res?.payload?.success) {
         showToast("success", "Successfully logged in!");
         setFormData({
           email: "",
           password: ""
         });
-        navigate("/home");
+        // navigate("/home"); 
       } else {
-        showToast("error", res.payload?.data);
+        // अगर API से एरर मैसेज आया है या payload नहीं मिला
+        const errMsg = res?.payload?.message || res?.payload?.data || "Login failed!";
+        showToast("error", errMsg);
       }
     } catch (error) {
-      showToast("error", error?.message);
+      showToast("error", error?.message || "Something went wrong!");
     }
   };
 
@@ -71,6 +76,7 @@ const LoginPage = () => {
                 label="Email"
                 name="email"
                 type="email"
+                value={formData.email} // फ़िक्स: value बाइंड की
                 onChange={handleChange}
               />
             </Grid>
@@ -81,6 +87,7 @@ const LoginPage = () => {
                 label="Password"
                 name="password"
                 type="password"
+                value={formData.password} // फ़िक्स: value बाइंड की
                 onChange={handleChange}
               />
             </Grid>
@@ -91,7 +98,7 @@ const LoginPage = () => {
             variant="contained"
             color="primary"
             sx={{ mt: 3, mb: 2 }}
-            disabled={loading} // Disable the button when loading
+            disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
           </Button>
@@ -100,6 +107,7 @@ const LoginPage = () => {
             variant="outlined"
             onClick={handleRegisterRedirect}
             disabled={loading}
+            type="button" // फ़िक्स: इसे स्पष्ट रूप से button टाइप दिया ताकि यह फॉर्म सबमिट न करे
           >
             Don't have an account? Register
           </Button>

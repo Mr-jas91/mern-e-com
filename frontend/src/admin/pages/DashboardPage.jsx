@@ -17,7 +17,7 @@ import {
 import SidebarContent from "../components/Sidebar";
 import { MainContent } from "../utills/Style";
 import { useDispatch, useSelector } from "react-redux";
-import { recentOrders } from "../../redux/reducers/orderReducer";
+// import { recentOrders } from "../../redux/reducers/orderReducer";
 import Loader from "../../shared/Loader/Loader";
 
 // Reusable Stat Card
@@ -77,14 +77,14 @@ const OrdersTable = ({ orders }) => (
 );
 
 const DashboardPage = () => {
-  const { recentOrder, loading } = useSelector((state) => state.orders);
+  // const { recentOrder, loading } = useSelector((state) => state.orders);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(recentOrders());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(recentOrders());
+  // }, [dispatch]);
 
-  if (loading) return <Loader />;
+  // if (loading) return <Loader />;
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -97,7 +97,7 @@ const DashboardPage = () => {
         </Typography>
 
         {/* Stats Cards */}
-        <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
+        {/* <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
           <StatCard
             title="Total Orders This Month"
             value={recentOrder?.lastMonth?.totalOrders}
@@ -110,13 +110,13 @@ const DashboardPage = () => {
             title="Revenue This Month"
             value={recentOrder?.lastMonth?.totalAmount}
           />
-        </Box>
+        </Box> */}
 
         {/* Recent Orders Table */}
         <Typography variant="h5" gutterBottom>
           Recent Orders
         </Typography>
-        <OrdersTable orders={recentOrder?.last10Orders} />
+        {/* <OrdersTable orders={recentOrder?.last10Orders} /> */}
       </MainContent>
     </Box>
   );

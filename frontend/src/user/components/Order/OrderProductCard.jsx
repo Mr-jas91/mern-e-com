@@ -10,14 +10,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { getOrderDetails } from "../../../redux/reducers/orderReducer.js";
-const OrderProductCard = ({ orderDate, orderDetails }) => {
- 
-  const order = orderDetails?.productId;
+const OrderProductCard = ({ orderDate, orderDetails, orderId }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const handleClick = () => {
-    dispatch(getOrderDetails(orderDetails?._id));
-    navigate(`/order/${orderDetails?._id}/details`);
+    dispatch(getOrderDetails({ orderId, itemId: orderDetails?._id }));
+    navigate(`/orderdetails/${orderId}/${orderDetails?._id}`);
   };
   return (
     <Card
@@ -43,26 +41,26 @@ const OrderProductCard = ({ orderDate, orderDetails }) => {
           objectFit: "cover",
           borderRadius: "4px 0 0 4px"
         }}
-        image={order?.images[0]}
-        alt={order?.name}
+        image={orderDetails?.image}
+        alt={orderDetails?.name}
       />
       <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, p: 2 }}>
         <CardContent sx={{ flex: "1 0 auto", padding: 0 }}>
           <Typography component="div" variant="h6" sx={{ fontWeight: "bold" }}>
-            {order?.name}
+            {orderDetails?.name}
           </Typography>
           <Typography
             variant="subtitle1"
             color="text.secondary"
             component="div"
             sx={{
-              textDecoration: order?.discount > 0 ? "line-through" : "none",
+              textDecoration: orderDetails?.discount > 0 ? "line-through" : "none",
               fontSize: "1rem"
             }}
           >
-            ${order?.price.toFixed(2)}
+            ${orderDetails?.price.toFixed(2)}
           </Typography>
-          {order?.discount > 0 && (
+          {orderDetails?.discount > 0 && (
             <Typography
               variant="h6"
               sx={{
@@ -71,7 +69,7 @@ const OrderProductCard = ({ orderDate, orderDetails }) => {
                 fontSize: "1.2rem"
               }}
             >
-              ${(order?.price - order.discount).toFixed(2)}
+              ${(orderDetails?.price - orderDetails.discount).toFixed(2)}
             </Typography>
           )}
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -87,15 +85,15 @@ const OrderProductCard = ({ orderDate, orderDetails }) => {
           }}
         >
           <Chip
-            label={orderDetails?.deliveryStatus}
+            label={orderDetails?.status}
             color={
-              orderDetails.deliveryStatus === "DELIVERED"
+              orderDetails.status === "DELIVERED"
                 ? "success"
-                : orderDetails.deliveryStatus === "SHIPPED"
-                ? "primary"
-                : orderDetails.deliveryStatus === "PENDING"
-                ? "warning"
-                : "default"
+                : orderDetails.status === "SHIPPED"
+                  ? "primary"
+                  : orderDetails.status === "PENDING"
+                    ? "warning"
+                    : "default"
             }
             size="small"
             variant="outlined"

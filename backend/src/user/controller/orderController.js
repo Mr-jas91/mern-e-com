@@ -6,8 +6,8 @@ import { Product } from "../../models/product.models.js";
 import { User } from "../../models/user.models.js";
 import { Transaction } from "../../models/transaction.models.js";
 import { razorpayInstance } from "../../config/razorpay.config.js";
+import { Cart } from "../../models/cart.models.js";
 import { Types } from "mongoose";
-
 // --- REUSABLE HELPER: Calculate Totals ---
 const validateAndCalculateOrderValue = async (orderItems) => {
   const productIds = orderItems.map((item) => item.productId);
@@ -58,6 +58,7 @@ const validateAndCalculateOrderValue = async (orderItems) => {
 };
 
 // --- CONTROLLERS ---
+// --- CONTROLLERS ---
 const createOrder = asyncHandler(async (req, res) => {
   const { orderItems, addressId, orderPrice, paymentOption } = req.body;
   const userId = req.user._id;
@@ -65,16 +66,18 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!orderItems?.length || !addressId || !orderPrice || !paymentOption) {
     throw new ApiError(400, "Invalid order details provided");
   }
-  // 1. Validate, Check Stock, and Calculate Price in one go
+
+  // 1. Validate, Check Stock, and Calculate Price
   const { totalValue, validatedItems } = await validateAndCalculateOrderValue(
     orderItems
   );
-  // 1. Validation & Price Check
+
+  // Validation & Price Check
   if (Math.round(totalValue) !== Math.round(orderPrice)) {
     throw new ApiError(400, "Price mismatch detected.");
   }
 
-  // 2. Get Shipping Address (Simplified logic for brevity)
+  // 2. Get Shipping Address
   const user = await User.findById(userId);
   const fullName = user.firstName
     ? `${user.firstName} ${user.lastName || ""}`.trim()
@@ -83,12 +86,12 @@ const createOrder = asyncHandler(async (req, res) => {
   const selectedAddress = user.addresses.id(addressId);
   if (!selectedAddress) throw new ApiError(404, "Address not found");
 
-  // Create Order
+  // 3. Create Order
   const newOrder = await Order.create({
     customer: userId,
     orderItems: validatedItems,
     shippingAddress: selectedAddress,
-    orderValue: totalValue, // Schema me field ka naam orderValue hai, apne orderPrice likha tha variable me
+    orderValue: totalValue,
     paymentOption,
     paymentStatus: "PENDING"
   });
@@ -103,7 +106,7 @@ const createOrder = asyncHandler(async (req, res) => {
         accept_partial: false,
         description: `Payment for Order #${newOrder._id}`,
         customer: {
-          name: fullName, // Fixed Name
+          name: fullName,
           email: user.email,
           contact: selectedAddress.phone || "9999999999"
         },
@@ -121,22 +124,55 @@ const createOrder = asyncHandler(async (req, res) => {
       await newOrder.save();
     } catch (error) {
       console.log(error);
-      // ROLLBACK: Agar link generate nahi hua to order delete karo, warna 'Ghost Order' ban jayega
       await Order.findByIdAndDelete(newOrder._id);
       throw new ApiError(500, "Failed to generate payment link");
     }
   }
 
-  // Create Transaction
-  await Transaction.create({
+  // 4. Create Transaction
+  const transactionData = {
     order: newOrder._id,
     user: userId,
-    paymentmethod: paymentOption,
-    paymentStatus: "PENDING", // Unified Enum
+    paymentMethod: paymentOption,
+    paymentStatus: "PENDING",
     amount: orderPrice,
-    paymentLinkId: paymentData.paymentLinkId // Can be null for COD
-    // transactionDate: Date.now() // Model me default laga diya hai to yaha zarurat nahi
-  });
+  };
+  if (paymentOption === "ONLINE" && paymentData.paymentLinkId) {
+    transactionData.paymentLinkId = paymentData.paymentLinkId;
+  }
+  await Transaction.create(transactionData);
+  try {
+    const orderedProductIds = orderItems.map((item) => item.productId.toString());
+
+    const updatedCart = await Cart.findOneAndUpdate(
+      { userId },
+      { $pull: { items: { productId: { $in: orderedProductIds } } } },
+      { new: true }
+    ).populate("items.productId", "price discount");
+
+    if (updatedCart) {
+      let newTotalPrice = 0;
+      let newTotalDiscount = 0;
+
+
+      updatedCart.items.forEach((item) => {
+        const p = item.productId;
+        if (p) {
+          newTotalPrice += p.price * item.quantity;
+          newTotalDiscount += (p.discount || 0) * item.quantity;
+        }
+      });
+
+      updatedCart.totalPrice = Number(newTotalPrice.toFixed(2));
+      updatedCart.discount = Number(newTotalDiscount.toFixed(2));
+      updatedCart.finalPrice = Number((newTotalPrice - newTotalDiscount).toFixed(2));
+
+      await updatedCart.save();
+    }
+  } catch (cartError) {
+    console.error("Failed to clear ordered items from cart:", cartError);
+  }
+
 
   return res
     .status(201)
@@ -144,7 +180,7 @@ const createOrder = asyncHandler(async (req, res) => {
       new ApiResponse(
         201,
         { orderId: newOrder._id, paymentUrl: paymentData.url },
-        "Order Created"
+        "Order Created and Cart Updated Successfully"
       )
     );
 });
@@ -167,7 +203,9 @@ const getOrderDetails = asyncHandler(async (req, res) => {
       createdAt: 1,
       customer: 1,
       shippingAddress: 1,
-      totalPrice: 1
+      orderValue: 1,
+      paymentOption: 1,
+      paymentStatus: 1
     }
   ).populate("customer", "firstName lastName email phone");
 
@@ -190,7 +228,7 @@ const getUserOrderHistory = asyncHandler(async (req, res) => {
     .limit(10)
     .lean();
 
-  if (!orders?.length) throw new ApiError(404, "No orders found");
+  if (!orders?.length) return res.status(200).json(new ApiResponse(201, {}, "No order found"));
 
   return res.status(200).json(new ApiResponse(200, orders, "Orders fetched"));
 });
@@ -198,13 +236,14 @@ const getUserOrderHistory = asyncHandler(async (req, res) => {
 const cancelOrder = asyncHandler(async (req, res) => {
   const { orderId, orderItemId } = req.params;
 
-  if (!orderId || !orderItemId) throw new ApiError(400, "Orderid is required");
+  if (!orderId || !orderItemId) throw new ApiError(400, "Internal Error");
+  const orderItemObjectId = new Types.ObjectId(orderItemId);
 
   const order = await Order.findOneAndUpdate(
     {
       _id: orderId,
       customer: req.user._id,
-      "orderItems._id": orderItemId,
+      "orderItems._id": orderItemObjectId,
       "orderItems.status": { $ne: "DELIVERED" }
     },
     {

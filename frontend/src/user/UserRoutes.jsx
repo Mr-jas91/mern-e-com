@@ -87,7 +87,7 @@ function UserRoutes() {
         />
 
         <Route
-          path="/order/:id/details"
+          path="/orderdetails/:orderId/:itemId"
           element={<PrivateRoute element={<OrderDetailsPage />} />}
         />
 

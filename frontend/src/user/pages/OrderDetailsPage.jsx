@@ -22,26 +22,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getOrderDetails,
   cancelOrder
-} from "../../redux/reducers/orderReducer"; // Import cancelOrder action
+} from "../../redux/reducers/orderReducer";
 import Loader from "../../shared/Loader/Loader";
 
 const OrderDetailsPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { orderDetails, loading } = useSelector((state) => state.orders);
-  const { id } = useParams();
-  const [isCancelling, setIsCancelling] = useState(false); // Track cancellation state
-
+  const { currentOrder, loading } = useSelector((state) => state.orders);
+  const { orderId, itemId } = useParams();
+  const [isCancelling, setIsCancelling] = useState(false); 
   useEffect(() => {
-    dispatch(getOrderDetails(id));
-  }, [dispatch, id]);
+    dispatch(getOrderDetails({ orderId, itemId }));
+  }, [dispatch, orderId, itemId]);
   if (loading) return <Loader />;
-  if (!orderDetails || !orderDetails.orderItems?.length)
+  if (!currentOrder || currentOrder.orderItems?.length <= 0)
     return <Typography>No order details available</Typography>;
 
-  const orderItem = orderDetails.orderItems[0];
-  const product = orderItem?.productId;
-  const deliveryStatus = orderItem?.deliveryStatus;
+  console.log(currentOrder);
+
+  const orderItem = currentOrder?.orderItems[0];
+  const shippingAddress = currentOrder?.shippingAddress;
+  const customer = currentOrder?.customer;
+  const deliveryStatus = orderItem?.status;
   const deliverySteps = ["Ordered", "Shipped", "Out for Delivery", "Delivered"];
 
   const getStepIndex = (status) => {
@@ -69,17 +71,17 @@ const OrderDetailsPage = () => {
   };
 
   const goToProductPage = () => {
-    if (product?._id) {
-      navigate(`/product/${product._id}`);
+    if (orderItem?.productId) {
+      navigate(`/product/${orderItem?.productId}`);
     }
   };
 
   // Handle order cancellation
   const handleCancelOrder = async () => {
     setIsCancelling(true);
-    await dispatch(cancelOrder(id));
+    await dispatch(cancelOrder({ orderId, itemId }));
     setIsCancelling(false);
-    navigate(`/order/${id}/details`);
+    navigate(`/orderdetails/${orderId}/${itemId}`);
   };
 
   return (
@@ -97,10 +99,10 @@ const OrderDetailsPage = () => {
             sx={{ cursor: "pointer" }}
           >
             <Grid item xs={12} sm={4} display="flex" justifyContent="center">
-              {product?.images?.length > 0 && (
+              {orderItem?.image?.length > 0 && (
                 <img
-                  src={product.images[0]}
-                  alt={product.name}
+                  src={orderItem.image}
+                  alt={orderItem.name}
                   style={{
                     width: "100%",
                     maxHeight: 250,
@@ -116,29 +118,29 @@ const OrderDetailsPage = () => {
                 Order ID: {orderItem?._id}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {product?.name || "Product Name Unavailable"}
+                {orderItem?.name || "Product Name Unavailable"}
               </Typography>
 
               <Box display="flex" alignItems="center" gap={2} mt={1}>
                 <Typography
                   variant="h6"
                   sx={{
-                    color: product?.discount ? "gray" : "primary.main",
-                    textDecoration: product?.discount ? "line-through" : "none",
-                    fontWeight: product?.discount ? "normal" : "bold"
+                    color: orderItem?.discount ? "gray" : "primary.main",
+                    textDecoration: orderItem?.discount ? "line-through" : "none",
+                    fontWeight: orderItem?.discount ? "normal" : "bold"
                   }}
                 >
-                  ₹{product?.price ? product.price.toFixed(2) : "N/A"}
+                  ₹{orderItem?.price ? orderItem.price.toFixed(2) : "N/A"}
                 </Typography>
 
-                {product?.discount && (
+                {orderItem?.discount && (
                   <Typography
                     variant="h5"
                     sx={{ color: "green", fontWeight: "bold" }}
                   >
                     ₹
-                    {product?.price && product?.discount
-                      ? (product.price - product.discount).toFixed(2)
+                    {orderItem?.price && orderItem?.discount
+                      ? (orderItem.price - orderItem.discount).toFixed(2)
                       : "N/A"}
                   </Typography>
                 )}
@@ -173,10 +175,10 @@ const OrderDetailsPage = () => {
                           index === 0
                             ? ShoppingCartIcon
                             : index === 1
-                            ? LocalShippingIcon
-                            : index === 2
-                            ? DeliveryDiningIcon
-                            : CheckCircleIcon;
+                              ? LocalShippingIcon
+                              : index === 2
+                                ? DeliveryDiningIcon
+                                : CheckCircleIcon;
 
                         return (
                           <IconComponent
@@ -222,18 +224,18 @@ const OrderDetailsPage = () => {
             Shipping Address
           </Typography>
           <Typography variant="body1" color="text.secondary" mt={1}>
-            {orderDetails?.shippingAddress?.fullName}
+            {`${customer.firstName} ${customer.lastName}`}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {orderDetails?.shippingAddress?.address || "Address not available"}
+            {shippingAddress?.address || "Address not available"}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {orderDetails?.shippingAddress?.city},{" "}
-            {orderDetails?.shippingAddress?.state},{" "}
-            {orderDetails?.shippingAddress?.pincode}
+            {shippingAddress?.city},{" "}
+            {shippingAddress?.state},{" "}
+            {shippingAddress?.pincode}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Mobile: {orderDetails?.shippingAddress?.mobileNo}
+            Mobile: {shippingAddress?.phone}
           </Typography>
 
           <Divider sx={{ my: 2 }} />
@@ -243,14 +245,14 @@ const OrderDetailsPage = () => {
           </Typography>
           <Box mt={1} display="flex" alignItems="center" gap={2}>
             <Chip
-              label={orderDetails?.paymentMethod || "N/A"}
+              label={currentOrder?.paymentOption || "N/A"}
               color="info"
               icon={<PaymentIcon />}
             />
             <Chip
-              label={orderDetails?.paymentStatus || "N/A"}
+              label={currentOrder?.paymentStatus || "N/A"}
               color={
-                orderDetails?.paymentStatus === "PAID" ? "success" : "warning"
+                currentOrder?.paymentStatus === "PAID" ? "success" : "warning"
               }
             />
           </Box>
