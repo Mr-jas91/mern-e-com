@@ -6,7 +6,8 @@ import cartReducer from "./reducers/cartReducer.js";
 import checkoutReducer from "./reducers/checkoutReducer.js";
 import orderSlice from "./reducers/orderReducer.js";
 import adminReducer from "./reducers/adminReducer.js";
-import transactionReducer from "../redux/reducers/transactionReducer.js"
+import transactionReducer from "./reducers/transactionReducer.js"; // 💡 पाथ को बाकी रिड्यूसर्स की तरह सिंक कर दिया
+
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -17,13 +18,20 @@ const store = configureStore({
     admin: adminReducer,
     transactions: transactionReducer
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
+  middleware: (getDefaultMiddleware) => {
+    const middleware = getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ["auth/login/fulfilled", "auth/logout/fulfilled"],
         ignoredPaths: ["auth.payload.headers"]
       }
-    }).concat(logger)
+    });
+    if (process.env.NODE_ENV === "development") {
+      return middleware.concat(logger);
+    }
+
+    return middleware;
+  },
+  devTools: process.env.NODE_ENV !== "production"
 });
 
 export default store;
