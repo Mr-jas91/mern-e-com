@@ -27,8 +27,8 @@ const ProductServices = {
   // Update product details by ID (admin)
   updateProduct: ({ id, formData }) =>
     handleRequest(api.post(`/admin/product/${id}`, formData)),
-  // Delete Product
 
+  // Delete Product
   deleteProduct: (id) => handleRequest(api.delete(`/admin/product/${id}`)),
   
   // Add a new category (admin)

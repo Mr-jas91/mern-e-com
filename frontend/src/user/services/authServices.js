@@ -1,5 +1,6 @@
 import api from "../../shared/interceptor.js";
-import { setUserToken, setUserRefreshToken } from "../../shared/token.js";
+import showToast from "../../shared/toastMsg/showToast.jsx";
+import { setUserToken, setUserRefreshToken, clearBothUserToken } from "../../shared/token.js";
 const authService = {
   register: async (formData) => {
     const response = await api.post("/register", formData);

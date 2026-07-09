@@ -1,19 +1,15 @@
 import mongoose from "mongoose";
 import { addressSchema } from "./user.models.js";
-// Reuse the address schema structure for consistency
-
 const orderItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
     required: true
   },
-  // --- SNAPSHOT FIELDS (Crucial) ---
   name: { type: String, required: true },
   image: { type: String, required: true },
   price: { type: Number, required: true },
   discount: { type: Number, required: true },
-  // ---------------------------------
   quantity: {
     type: Number,
     required: true,
@@ -21,8 +17,13 @@ const orderItemSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"],
+    enum: ["PENDING", "ACCEPTED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"],
     default: "PENDING"
+  },
+  // Added missing tracking field to allow updates from admin panel
+  tracking: {
+    type: String,
+    default: ""
   }
 });
 
@@ -59,11 +60,9 @@ const orderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "REFUNDED", "FAILED"],
       default: "PENDING"
     },
-    // Store the Gateway ID (e.g., Razorpay/Stripe ID) for refunds/tracking
     paymentLinkId: {
       type: String
     }
-    // Main Order Status (Easier for filtering "Active" vs "Past" orders)
   },
   { timestamps: true }
 );

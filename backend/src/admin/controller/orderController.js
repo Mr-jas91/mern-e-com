@@ -1,84 +1,99 @@
-// --- CONTROLLER UPDATES ---
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { Order } from "../../models/order.models.js";
 import { asyncHandler } from "../../utils/asyncHander.js";
-// GET all orders
+import { Types } from "mongoose";
+
+// @desc    Get all admin orders with minimal clean response
+// @route   GET /api/admin/orders
 const getOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find().select(
-    "orderPrice orderItems paymentMethod shippingAddress.fullName"
-  );
+  // Fixed fields: orderPrice -> orderValue, paymentMethod -> paymentOption
+  const orders = await Order.find()
+    .select("orderValue orderItems paymentOption shippingAddress createdAt").populate("customer", "firstName lastName phone email")
+    .sort({ createdAt: -1 });
+
   if (!orders || orders.length === 0) {
     throw new ApiError(404, "No orders found");
   }
-  res.status(200).json(new ApiResponse(200, orders));
+
+  return res.status(200).json(new ApiResponse(200, orders, "Orders fetched successfully"));
 });
 
-// GET order details
+// @desc    Get complete order details with safe population targeting snapshotting data
+// @route   GET /api/admin/orders/:id
 const getOrderDetails = asyncHandler(async (req, res) => {
-  const orderId = req.params.id;
-  if (!orderId) throw new ApiError(400, "Order ID is required");
+  const { id } = req.params;
+  if (!id) throw new ApiError(400, "Order ID parameter is required");
 
-  const order = await Order.findById(orderId).populate(
-    "orderItems.productId",
-    "name price discount"
-  );
+  const order = await Order.findById(id).populate("customer", "firstName lastName email phone");
 
-  if (!order) throw new ApiError(404, "Order not found");
+  if (!order) throw new ApiError(404, "Requested order entry not found");
 
-  res.status(200).json(new ApiResponse(200, order));
+  return res.status(200).json(new ApiResponse(200, order, "Order detail payload processed"));
 });
 
-// Post update specific product delivery status and tracking link
+// @desc    Update single specific item lifecycle state inside array block
+// @route   PUT /api/admin/orders/update-status
 const updateDeliveryStatus = asyncHandler(async (req, res) => {
-  const { productId, deliveryStatus, tracking } = req.body;
-  console.log(productId, deliveryStatus, tracking);
-  if (!productId) throw new ApiError(400, "Product ID is required");
+  const { orderId, itemId, deliveryStatus, tracking } = req.body;
 
-  const order = await Order.findOne({ "orderItems._id": productId });
-  if (!order) throw new ApiError(404, "Order not found");
-
-  let itemFound = false;
-
-  order.orderItems.forEach((item) => {
-    if (item._id.toString() === productId.toString()) {
-      if (deliveryStatus) item.deliveryStatus = deliveryStatus;
-      if (tracking) item.tracking = tracking;
-      itemFound = true;
-    }
-  });
-
-  if (!itemFound) {
-    throw new ApiError(404, "Order item not found in the order");
+  if (!orderId || !itemId) {
+    throw new ApiError(400, "Both orderId and sub-document itemId are required");
   }
 
-  await order.save();
+  // Generate atomic update object dynamically based on values provided
+  const updateFields = {};
+  if (deliveryStatus) updateFields["orderItems.$.status"] = deliveryStatus;
+  if (tracking) updateFields["orderItems.$.tracking"] = tracking;
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, order, "Delivery status updated successfully"));
+  // Atomically find array targeting item reference to avoid read-modify loops
+  const order = await Order.findOneAndUpdate(
+    { _id: orderId, "orderItems._id": itemId },
+    { $set: updateFields },
+    { new: true }
+  );
+
+  if (!order) {
+    throw new ApiError(404, "Target order or item document matching filters not found");
+  }
+
+  return res.status(200).json(new ApiResponse(200, order, "Item status indices updated seamlessly"));
 });
 
-// PUT accept order item
+// @desc    Fast confirmation targeting item payload index
+// @route   PUT /api/admin/orders/:id/accept
+// @desc    Fast confirmation targeting sub-document item ID inside an order array
+// @route   PUT /api/admin/orders/:id/accept
 const acceptOrderItem = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { itemIndex } = req.body;
+  const { id } = req.params; // This is the main orderId
+  const { itemId } = req.body; // Precise item document _id from the array
 
-  const order = await Order.findById(id);
-  if (!order) throw new ApiError(404, "Order not found");
+  if (!itemId) {
+    throw new ApiError(400, "Target item sub-document ID is required");
+  }
+  const objectItemId = new Types.ObjectId(itemId)
+  // Atomically target and update the array item matching both IDs
+  const order = await Order.findOneAndUpdate(
+    { _id: id, "orderItems._id": objectItemId },
+    { $set: { "orderItems.$.status": "ACCEPTED" } },
+    { new: true } // Returns the fresh updated document
+  );
 
-  order.orderItems[itemIndex].deliveryStatus = "ACCEPTED";
-  await order.save();
+  if (!order) {
+    throw new ApiError(404, "No matching order or item found with the provided IDs");
+  }
 
-  res.status(200).json(new ApiResponse(200, order));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, order, "Item status successfully changed to ACCEPTED"));
 });
 
+// @desc    Optimized analytics aggregation with synced schema properties
+// @route   GET /api/admin/orders/dashboard-metrics
 const recentOrders = asyncHandler(async (req, res) => {
-  const now = new Date();
   const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(now.getMonth() - 1);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-  // Aggregation pipeline
   const stats = await Order.aggregate([
     {
       $facet: {
@@ -87,57 +102,57 @@ const recentOrders = asyncHandler(async (req, res) => {
           { $limit: 10 },
           {
             $lookup: {
-              from: "Users", // MongoDB collection name for your users
+              from: "Users",
               localField: "customer",
               foreignField: "_id",
               as: "customer"
             }
           },
-          { $unwind: "$customer" },
+          { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
           {
+            // Modified to project structural orderItems matrix layout explicitly
             $project: {
-              orderPrice: 1,
-              paymentMethod: 1,
+              orderValue: 1,
+              paymentOption: 1,
               paymentStatus: 1,
+              shippingAddress: 1,
+              orderItems: 1,
               createdAt: 1,
-              "customer.firstName": 1
+              "customer.firstName": 1,
+              "customer.lastName": 1,
+              "customer.phone": 1,
+              "customer.email": 1,
             }
           }
         ],
-
         lastMonthStats: [
           { $match: { createdAt: { $gte: oneMonthAgo } } },
           {
             $group: {
               _id: null,
               totalOrders: { $sum: 1 },
-              totalAmount: { $sum: "$orderPrice" }
+              totalAmount: { $sum: "$orderValue" }
             }
           }
         ],
-
         pendingDeliveries: [
           { $unwind: "$orderItems" },
-          { $match: { "orderItems.deliveryStatus": "PENDING" } },
+          { $match: { "orderItems.status": "PENDING" } },
           { $count: "pendingCount" }
         ]
       }
     }
   ]);
 
-  res.status(200).json(
-    new ApiResponse(200, {
-      last10Orders: stats[0].last10Orders,
-      lastMonth: stats[0].lastMonthStats[0] || {
-        totalOrders: 0,
-        totalAmount: 0
-      },
-      pendingDeliveries: stats[0].pendingDeliveries[0]?.pendingCount || 0
-    })
-  );
-});
 
-// Export
+  const outputMetrics = {
+    last10Orders: stats[0]?.last10Orders || [],
+    lastMonth: stats[0]?.lastMonthStats?.[0] || { totalOrders: 0, totalAmount: 0 },
+    pendingDeliveries: stats[0]?.pendingDeliveries?.[0]?.pendingCount || 0
+  };
+
+  return res.status(200).json(new ApiResponse(200, outputMetrics, "Dashboard pipeline metrics computed successfully"));
+});
 export {
   getOrders,
   getOrderDetails,

@@ -138,6 +138,8 @@ const updateProductDetails = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, "Product updated successfully"));
 });
+
+// deleteProduct api
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 

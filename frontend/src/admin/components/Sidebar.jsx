@@ -1,10 +1,11 @@
-import React, { useCallback } from "react";
+import React from "react";
 import {
   Dashboard,
   ShoppingCart,
   Payment,
   Inventory,
-  Logout
+  Logout,
+  Menu as MenuIcon
 } from "@mui/icons-material";
 import {
   Drawer,
@@ -13,13 +14,18 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Typography
+  Typography,
+  IconButton,
+  Box,
+  AppBar
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { clearBothAdminToken } from "../../shared/token";
 import { logout } from "../../redux/reducers/adminReducer";
+import showToast from "../../shared/toastMsg/showToast";
+
 const drawerWidth = 240;
 
 const menuItems = [
@@ -30,7 +36,8 @@ const menuItems = [
   { text: "Logout", icon: <Logout />, path: "/admin/login", isLogout: true }
 ];
 
-const SidebarContent = () => {
+// Added dynamic mobile state toggling properties directly into the sidebar parameters
+const SidebarContent = ({ mobileOpen, handleDrawerToggle }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -39,40 +46,27 @@ const SidebarContent = () => {
   const handleLogout = async () => {
     clearBothAdminToken();
     await dispatch(logout());
+    showToast("success", "Successfully logged out!");
     navigate("/admin/login");
   };
 
-  const handleItemClick = useCallback(
-    (item) => {
-      if (item.isLogout) {
-        handleLogout();
-      } else {
-        navigate(item.path);
-      }
-    },
-    [navigate, dispatch]
-  );
+  const handleItemClick = (item) => {
+    if (item.isLogout) {
+      handleLogout();
+    } else {
+      navigate(item.path);
+    }
+    if (handleDrawerToggle) handleDrawerToggle(); // Close mobile drawer automatically on click
+  };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.common.white
-        }
-      }}
-    >
-      <Toolbar>
-        <Typography variant="h6" sx={{ textAlign: "center", width: "100%" }}>
-          Admin Panel
+  const drawerContent = (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Toolbar sx={{ justifyContent: "center", background: "rgba(0,0,0,0.05)", mb: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", tracking: 1, letterSpacing: "1px" }}>
+          ADMIN STORE
         </Typography>
       </Toolbar>
-      <List>
+      <List sx={{ px: 1 }}>
         {menuItems.map((item, index) => {
           const isActive = location.pathname === item.path;
           return (
@@ -80,20 +74,91 @@ const SidebarContent = () => {
               key={index}
               onClick={() => handleItemClick(item)}
               sx={{
-                color: "inherit",
-                backgroundColor: isActive ? "rgba(255, 255, 255, 0.15)" : "inherit",
+                borderRadius: "8px",
+                mb: 0.5,
+                color: isActive ? theme.palette.common.white : "rgba(255, 255, 255, 0.7)",
+                backgroundColor: isActive ? "rgba(255, 255, 255, 0.15)" : "transparent",
+                borderLeft: isActive ? `4px solid ${theme.palette.common.white}` : "4px solid transparent",
                 "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.25)"
-                }
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  color: theme.palette.common.white
+                },
+                transition: "all 0.2s ease"
               }}
             >
-              <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: isActive ? "bold" : "medium" }} />
             </ListItemButton>
           );
         })}
       </List>
-    </Drawer>
+    </Box>
+  );
+
+  return (
+    <>
+      {/* Dynamic Header Toolbar to allow opening and closing the menu on smaller devices */}
+      <AppBar
+        position="fixed"
+        elevation={1}
+        sx={{
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+          backgroundColor: "#background.paper",
+          color: "text.primary",
+          display: { sm: "none" } // Only display header bar on mobile devices
+        }}
+      >
+        <Toolbar>
+          <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}>
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: "bold" }}>
+            Admin Dashboard
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+        {/* Mobile Temporary Slide-Out Drawer View */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.common.white,
+              boxShadow: 4
+            }
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+
+        {/* Desktop Permanent Drawer View Layout */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.common.white,
+              borderRight: "none"
+            }
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
+    </>
   );
 };
 

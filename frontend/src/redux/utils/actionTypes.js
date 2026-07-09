@@ -59,4 +59,5 @@ export const current_admin = "admin/currentAdmin"; // Get current logged-in admi
 // ✅ Transection
 // ==========================
 
-export const get_transection = "transection";
+export const get_transaction = "transaction";
+export const updateTransactionStatus = "trasaction/update"

@@ -31,7 +31,7 @@ const Navbar = () => {
   const handleLogout = async (e) => {
     e.preventDefault();
     dispatch(logoutUser());
-    dispatch(clearCart());
+    dispatch(clearCartState());
     navigate("/home");
   };
 

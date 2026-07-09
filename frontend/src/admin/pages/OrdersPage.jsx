@@ -1,52 +1,34 @@
+// pages/OrdersPage.jsx
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  CssBaseline,
-  Toolbar,
-  Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Avatar,
-  CircularProgress
-} from "@mui/material";
-import { MainContent } from "../utills/Style";
+import { Box, CssBaseline, Toolbar, Typography, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Paper, Card, Tooltip, IconButton, CircularProgress } from "@mui/material";
+import { Print, Visibility } from "@mui/icons-material";
 import SidebarContent from "../components/Sidebar";
+import { StatusChip } from "../components/StatusChip";
+import OrderDetailsModal from "../components/OrderDetailsModel";
+import { printOrderInvoice } from "../components/PrintInvoice";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  getAdminOrders,
-  getAdminOrderDetails,
-  updateDeliveryStatus
-} from "../../redux/reducers/orderReducer";
+import { getAdminOrders, getAdminOrderDetails, updateDeliveryStatus } from "../../redux/reducers/orderReducer";
 import showToast from "../../shared/toastMsg/showToast";
-import Loader from "../../shared/Loader/Loader";
+
+const drawerWidth = 240;
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [orderDetailsChange, setOrderDetailsChange] = useState({});
 
-  const { adminOrders, adminOrderDetails, loading } = useSelector(
-    (state) => state.orders
-  );
+  const { adminOrders, adminOrderDetails, loading } = useSelector((state) => state.orders);
+
   useEffect(() => {
     dispatch(getAdminOrders());
   }, [dispatch]);
+  
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  const getSafeId = (idObj) => (idObj && typeof idObj === "object" && idObj.$oid ? idObj.$oid : idObj?.toString());
 
-  const handleOpen = async (orderId) => {
+  const handleOpenDetailsModal = async (orderId) => {
+    if (!orderId) return;
     await dispatch(getAdminOrderDetails(orderId));
     setOpen(true);
   };
@@ -56,323 +38,104 @@ const OrdersPage = () => {
     setOrderDetailsChange({});
   };
 
+  const handleOrderDetailsChange = (e, itemId) => {
+    const { name, value } = e.target;
+    setOrderDetailsChange((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], itemId, [name]: value }
+    }));
+  };
+
   const handleSave = async () => {
     try {
       const updates = Object.values(orderDetailsChange);
       for (let update of updates) {
         if (update.deliveryStatus || update.tracking) {
-          await dispatch(updateDeliveryStatus(update));
+          await dispatch(updateDeliveryStatus({
+            orderId: adminOrderDetails._id,
+            itemId: update.itemId,
+            deliveryStatus: update.deliveryStatus,
+            tracking: update.tracking
+          })).unwrap();
         }
       }
-      showToast("success", "Delivery status updated");
+      showToast("success", "Delivery status updated successfully");
       handleClose();
       dispatch(getAdminOrders());
     } catch (error) {
-      showToast("error", "Failed to update delivery status");
+      showToast("error", error || "Failed to update delivery status");
     }
   };
 
-  const handleOrderDetailsChange = (e, productId) => {
-    const { name, value } = e.target;
-    setOrderDetailsChange((prev) => ({
-      ...prev,
-      [productId]: {
-        ...prev[productId],
-        productId,
-        [name]: value
-      }
-    }));
+  // Triggers our clean externalized invoice design helper
+  const handleTriggerPrint = (orderId) => {
+    const targetOrder = adminOrders?.find((o) => getSafeId(o._id) === orderId);
+    printOrderInvoice(targetOrder, orderId); // 🚀 Direct Utility Execution Call
   };
-  const isAllStatusFinal = adminOrderDetails?.orderItems.every((item) => {
-    const currentStatus = item.deliveryStatus;
-    return ["DELIVERED", "CANCELLED"].includes(currentStatus);
-  });
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa", width: "100%" }}>
       <CssBaseline />
-      <SidebarContent />
-      <MainContent>
-        <Toolbar />
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ textAlign: "center", color: "black" }}
-        >
-          Orders
-        </Typography>
-        <Box p={2}>
-          {loading ? (
-            <Box textAlign="center">
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: "black" }}>Order ID</TableCell>
-                  <TableCell sx={{ color: "black" }}>Order Date</TableCell>
-                  <TableCell sx={{ color: "black" }}>Customer Name</TableCell>
-                  <TableCell sx={{ color: "black" }}>Order Value</TableCell>
-                  <TableCell sx={{ color: "black" }}>Payment Method</TableCell>
-                  <TableCell sx={{ color: "black" }}>Status</TableCell>
-                  <TableCell sx={{ color: "black" }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {adminOrders.map((order) => (
-                  <TableRow key={order._id} hover>
-                    <TableCell sx={{ color: "black" }}>{order._id}</TableCell>
-                    <TableCell sx={{ color: "black" }}>
-                      {order?.createdAt}
-                    </TableCell>
+      <SidebarContent mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
 
-                    <TableCell sx={{ color: "black" }}>
-                      {order.shippingAddress.fullName}
-                    </TableCell>
-                    <TableCell sx={{ color: "black" }}>
-                      ₹{order.orderPrice.toFixed(2)}
-                    </TableCell>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, width: { sm: `calc(100% - ${drawerWidth}px)` }, minWidth: 0, boxSizing: "border-box" }}>
+        <Toolbar sx={{ display: { xs: "block", sm: "none" } }} />
+        <Typography variant="h5" sx={{ fontWeight: "bold", mb: 3, mt: { xs: 1, sm: 4 } }}>Order Manifest Adjustments</Typography>
 
-                    <TableCell sx={{ color: "black" }}>
-                      {order.paymentMethod}
-                    </TableCell>
-                    <TableCell sx={{ color: "black" }}>
-                      ₹{order.orderItems[0].deliveryStatus}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleOpen(order._id)}
-                      >
-                        Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </Box>
+        <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)" }}>
+          <Box p={2}>
+            {loading && adminOrders.length === 0 ? (
+              <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
+            ) : (
+              <TableContainer component={Paper} elevation={0} sx={{ overflowX: "auto" }}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: "#fcfcfc" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: "600" }}>Order ID</TableCell>
+                      <TableCell sx={{ fontWeight: "600" }}>Order Date</TableCell>
+                      <TableCell sx={{ fontWeight: "600" }}>Customer Name</TableCell>
+                      <TableCell sx={{ fontWeight: "600" }}>Order Value</TableCell>
+                      <TableCell sx={{ fontWeight: "600" }}>Status</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: "600", pr: 4 }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {adminOrders?.map((order) => {
+                      const safeOrderId = getSafeId(order._id);
+                      return (
+                        <TableRow key={safeOrderId} hover>
+                          <TableCell sx={{ fontWeight: "500" }}>{safeOrderId}</TableCell>
+                          <TableCell>{new Date(order.createdAt).toLocaleDateString("en-IN")}</TableCell>
+                          <TableCell>{`${order.customer?.firstName} ${order?.customer?.lastName}` || "Guest User"}</TableCell>
+                          <TableCell sx={{ fontWeight: "600" }}>₹{(order?.orderValue || 0).toLocaleString("en-IN")}</TableCell>
+                          <TableCell><StatusChip status={order?.orderItems?.[0]?.status} /></TableCell>
+                          <TableCell align="right" sx={{ pr: 2 }}>
+                            <Box display="flex" justifyContent="flex-end" gap={0.5}>
+                              <Tooltip title="Print Premium Invoice"><IconButton size="small" color="primary" onClick={() => handleTriggerPrint(safeOrderId)}><Print fontSize="small" /></IconButton></Tooltip>
+                              <Tooltip title="Manage Order Parameters"><IconButton size="small" color="inherit" onClick={() => handleOpenDetailsModal(safeOrderId)}><Visibility fontSize="small" /></IconButton></Tooltip>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        </Card>
 
-        {adminOrderDetails && (
-          <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ color: "black" }}>Order Details</DialogTitle>
-            <DialogContent sx={{ color: "black" }}>
-              <Grid container spacing={2} mt={1}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ color: "black" }}>
-                    Customer Info
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Order ID"
-                    fullWidth
-                    value={adminOrderDetails._id}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Name"
-                    fullWidth
-                    value={adminOrderDetails.shippingAddress.fullName}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Mobile"
-                    fullWidth
-                    value={adminOrderDetails.shippingAddress.mobileNo}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Address"
-                    fullWidth
-                    value={adminOrderDetails.shippingAddress.address}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Pincode"
-                    fullWidth
-                    value={adminOrderDetails.shippingAddress.pincode}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Order Date"
-                    fullWidth
-                    value={new Date(
-                      adminOrderDetails.createdAt
-                    ).toLocaleDateString()}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Payment Method"
-                    fullWidth
-                    value={adminOrderDetails.paymentMethod}
-                    disabled
-                    sx={{ input: { color: "black" } }}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ color: "black" }}>
-                    Product Info
-                  </Typography>
-                </Grid>
-
-                {adminOrderDetails.orderItems.map((item, index) => (
-                  <React.Fragment key={index}>
-                    {item.productId?.images?.slice(0, 1).map((img, i) => (
-                      <Grid item xs={2} key={i}>
-                        <Avatar
-                          variant="rounded"
-                          src={img}
-                          alt={`product-${i}`}
-                          sx={{ width: 60, height: 60 }}
-                        />
-                      </Grid>
-                    ))}
-                    <Grid item xs={10}>
-                      <TextField
-                        fullWidth
-                        value={item.productId?.name || ""}
-                        label="Product Name"
-                        disabled
-                        sx={{ input: { color: "black" } }}
-                      />
-                    </Grid>
-                    <Grid item xs={4}>
-                      <TextField
-                        fullWidth
-                        value={item.productId?.price || 0}
-                        label="Price"
-                        disabled
-                        sx={{ input: { color: "black" } }}
-                      />
-                    </Grid>
-                    <Grid item xs={4}>
-                      <TextField
-                        fullWidth
-                        value={
-                          (item.productId?.price || 0) -
-                          (item.productId?.discount || 0)
-                        }
-                        label="Discount Price"
-                        disabled
-                        sx={{ input: { color: "black" } }}
-                      />
-                    </Grid>
-                    <Grid item xs={4}>
-                      <TextField
-                        fullWidth
-                        value={item.quantity}
-                        label="Quantity"
-                        disabled
-                        sx={{ input: { color: "black" } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        name="tracking"
-                        label="Tracking Link"
-                        value={
-                          orderDetailsChange[item._id]?.tracking ||
-                          item.tracking ||
-                          ""
-                        }
-                        onChange={(e) => handleOrderDetailsChange(e, item._id)}
-                        disabled={!!item.tracking}
-                        sx={{ input: { color: "black" } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <FormControl fullWidth>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          name="deliveryStatus"
-                          value={
-                            orderDetailsChange[item._id]?.deliveryStatus ||
-                            item.deliveryStatus ||
-                            ""
-                          }
-                          onChange={(e) =>
-                            handleOrderDetailsChange(e, item._id)
-                          }
-                          sx={{ color: "black" }}
-                          disabled={["DELIVERED", "CANCELLED"].includes(
-                            item.deliveryStatus
-                          )}
-                        >
-                          <MenuItem
-                            value="PENDING"
-                            disabled={[
-                              "ACCEPTED",
-                              "SHIPPED",
-                              "DELIVERED"
-                            ].includes(item.deliveryStatus)}
-                          >
-                            PENDING
-                          </MenuItem>
-
-                          <MenuItem
-                            value="ACCEPTED"
-                            disabled={[
-                              "SHIPPED",
-                              "DELIVERED",
-                              "CANCELLED"
-                            ].includes(item.deliveryStatus)}
-                          >
-                            Accepted
-                          </MenuItem>
-                          <MenuItem
-                            value="SHIPPED"
-                            disabled={["DELIVERED", "CANCELLED"].includes(
-                              item.deliveryStatus
-                            )}
-                          >
-                            Shipped
-                          </MenuItem>
-                          <MenuItem value="DELIVERED">Delivered</MenuItem>
-                          <MenuItem value="CANCELLED">Cancel</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </React.Fragment>
-                ))}
-              </Grid>
-            </DialogContent>
-            <DialogActions sx={{ color: "black" }}>
-              <Button onClick={handleClose}>Close</Button>
-              <Button
-                variant="contained"
-                disabled={loading || isAllStatusFinal}
-                onClick={handleSave}
-              >
-                Save
-              </Button>
-            </DialogActions>
-          </Dialog>
-        )}
-      </MainContent>
+        {/* Reusable Details Pop-Up */}
+        <OrderDetailsModal
+          open={open}
+          onClose={handleClose}
+          orderDetails={adminOrderDetails}
+          orderDetailsChange={orderDetailsChange}
+          onChange={handleOrderDetailsChange}
+          onSave={handleSave}
+          loading={loading}
+        />
+      </Box>
     </Box>
   );
 };

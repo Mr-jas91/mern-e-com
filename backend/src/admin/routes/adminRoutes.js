@@ -57,7 +57,7 @@ import {
 } from "../controller/userController.js";
 
 // Transection controller
-import { getTransection } from "../controller/transectionController.js";
+import { getTransaction, updatePaymentStatus } from "../controller/transactionController.js";
 
 // Create router
 const router = express.Router();
@@ -107,5 +107,6 @@ router.route("/users").get(verifyJWT, getAllUsers);
 router.route("/activeuser").get(verifyJWT, getActiveUsersCount);
 
 //Transection rouotes
-router.route("/transection").get(verifyJWT, getTransection);
+router.route("/transactions").get(verifyJWT, getTransaction);
+router.route("/transaction/:id").put(verifyJWT, updatePaymentStatus);
 export default router;
