@@ -113,7 +113,7 @@ const createOrder = asyncHandler(async (req, res) => {
         notify: { sms: true, email: true },
         reminder_enable: true,
         notes: { orderId: newOrder._id.toString() },
-        callback_url: "https://www.google.com",
+        callback_url: "https://firstkart91.vercel.app/",
         callback_method: "get"
       });
 
